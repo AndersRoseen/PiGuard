@@ -1,5 +1,5 @@
 from cameramanager import CameraManager
-from PIL import Image, ImageChops
+from PIL import ImageChops
 from functools import reduce
 import math, operator
 
