@@ -15,8 +15,8 @@ class MotionDetector:
         return math.sqrt(reduce(operator.add, map(lambda h, i: h*(i**2), h, range(256)))/(float(im1.size[0])*im1.size[1]))
         
     def detect_motion(self, new_picture_stream):
-        im1 = Image.open(self.__last_picture_stream.get_stream())
-        im2 = Image.open(new_picture_stream.get_stream())
+        im1 = self.__last_picture_stream.get_image()
+        im2 = new_picture_stream.get_image()
         mean_diff = MotionDetector.__img_diff(im1, im2)
         
         motion_occurred = mean_diff > 10
