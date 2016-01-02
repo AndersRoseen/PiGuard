@@ -1,20 +1,32 @@
 import datetime
 import factory
-from motiondetector import MotionDetector
 
 class Status:
     
-    def __init__(self, picture):
+    def __init__(self):
         self.timestamp = datetime.datetime.now()
-        self.picture = picture
+        self.picture = None
         
+
+class StatusGenerator:
+    
+    def __init__(self):
+        self.__sensors = factory.get_sensors()
+    
+    def get_current_status(self):
+        status = Status()
+        for sensor in self.__sensors:
+            sensor.update_status(status)
         
+        return status
+
+
 class StatusHandler:
     
     def __init__(self):
-        self.__uploader = factory.get_uploader('piguard.ini')
-        self.__mail_sender = factory.get_mail_sender('piguard.ini')
-        self.__motion_detector = MotionDetector()
+        self.__uploader = factory.get_uploader()
+        self.__mail_sender = factory.get_mail_sender()
+        self.__motion_detector = factory.get_motion_detector()
         
     def manage_status(self, status):
         img_stream = status.picture

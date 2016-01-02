@@ -4,13 +4,13 @@ import os
 
 class PictureUploader:
     
-    def __init__(self, token):
+    def __init__(self, token, upload_interval=1):
         dbx = dropbox.Dropbox(token)
-        #dbx = dropbox.Dropbox("aK3f3Rqc4uMAAAAAAAAAq2rMlgPXsJgg_54RMv4_2Qr7XMt-jvefA7VP-z38CSHC")
         dbx.users_get_current_account()
         self.__dropbox = dbx
         
         self.__last_upload = datetime.datetime.now()
+        self.__upload_interval = upload_interval * 60
         
     def __get_file_name(self):
         now = datetime.datetime.now()
@@ -23,7 +23,7 @@ class PictureUploader:
             
     def upload_file_stream(self, file_stream, is_alarm):
         now = datetime.datetime.now()
-        if is_alarm or (now - self.__last_upload).seconds > 60:
+        if is_alarm or (now - self.__last_upload).seconds > self.__upload_interval:
             self.__upload_stream_to_dropbox(file_stream)
             print("Picture uploaded on Dropbox!")
             self.__last_upload = now
