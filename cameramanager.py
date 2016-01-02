@@ -9,3 +9,6 @@ class CameraManager:
         stream = io.BytesIO()
         self.__cam.capture(stream, format='jpeg')
         return ImageStream(stream)
+        
+    def update_status(self, status):
+        status.picture = self.capture_picture()
