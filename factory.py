@@ -1,7 +1,7 @@
 import configparser
 from uploader import PictureUploader
 from mailsender import MailSender
-from cameramanager import CameraManager
+from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 
 config = configparser.ConfigParser()
@@ -27,13 +27,18 @@ def get_mail_sender():
 
     return MailSender(user, passw, server, port, mfrom, mto)
     
-def get_camera_manager():
-    return CameraManager()
+def get_camera_sensor():
+    return CameraSensor()
     
 def get_motion_detector():
     return MotionDetector()
     
 def get_sensors():
     sensors = []
-    sensors.append(get_camera_manager())
+    sensors.append(get_camera_sensor())
     return sensors
+    
+def get_status_analyzers():
+    analyzers = []
+    analyzers.append(get_motion_detector())
+    return analyzers

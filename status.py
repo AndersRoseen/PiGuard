@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 import datetime
 import factory
 
@@ -6,7 +7,14 @@ class Status:
     def __init__(self):
         self.timestamp = datetime.datetime.now()
         self.picture = None
+
+class Analysis:
+    
+    def __init__(self):
+        self.motion_detected = False
+        self.current_image = None
         
+
 
 class StatusGenerator:
     
@@ -24,18 +32,35 @@ class StatusGenerator:
 class StatusHandler:
     
     def __init__(self):
+        self.__analyzers = factory.get_status_analyzers()
+        
         self.__uploader = factory.get_uploader()
         self.__mail_sender = factory.get_mail_sender()
-        self.__motion_detector = factory.get_motion_detector()
+        
         
     def manage_status(self, status):
-        img_stream = status.picture
-        something_changed = self.__motion_detector.detect_motion(img_stream)
+        analysis = self.__analyze(status)
+        #instead of an analysis a list of events is returned
+        #each event has an array of handler associated
     
-        if something_changed:
+        if analysis.motion_detected:
             print("ALARM!!!!!")
             self.__mail_sender.send_mail(img_stream)
         else:
             print("Everything is fine")
     
         self.__uploader.upload_file_stream(img_stream, something_changed)
+    
+    def __analyze(self, status):
+        analysis = Analysis()
+        for analyzer in self.__analyzers:
+            analyzer.analyze_status(status, analysis)
+            
+        return analysis
+        
+
+class IStatusAnalyzer(metaclass=ABCMeta):
+    
+    @abstractmethod
+    def analyze_status(self, status, analysis):
+        pass
