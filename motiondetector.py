@@ -3,7 +3,7 @@ from PIL import ImageChops
 from functools import reduce
 import math 
 import operator
-from status import IStatusAnalyzer
+from status import IStatusAnalyzer, Event
 
 class MotionDetector(IStatusAnalyzer):
     
@@ -31,9 +31,16 @@ class MotionDetector(IStatusAnalyzer):
         
         self.__last_picture_stream = new_picture_stream
         
+        if motion_occurred:
+            print("motion status: Motion detected!")
+        else:
+            print("motion status: Everything is quiet!")
+        
         return motion_occurred
         
     
-    def analyze_status(self, status, analysis):
-        analysis.motion_detected = self.__detect_motion(status.picture)
-        analysis.current_image = status.picture
+    def analyze_status(self, status):
+        events = []
+        if self.__detect_motion(status.picture):
+            events.append(Event.motionDetected)
+        return events

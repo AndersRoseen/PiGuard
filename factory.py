@@ -3,6 +3,7 @@ from uploader import PictureUploader
 from mailsender import MailSender
 from camerasensor import CameraSensor
 from motiondetector import MotionDetector
+from status import Event, ActionType
 
 config = configparser.ConfigParser()
 config.read('piguard.ini')
@@ -42,3 +43,17 @@ def get_status_analyzers():
     analyzers = []
     analyzers.append(get_motion_detector())
     return analyzers
+    
+def get_actions():
+    actions = {}
+    actions[ActionType.sendMail] = get_mail_sender()
+    actions[ActionType.uploadStatus] = get_uploader()
+    
+    return actions
+    
+def get_actions_per_event():
+    ea = {}
+    ea[Event.empty] = [ActionType.uploadStatus]
+    ea[Event.motionDetected] = [ActionType.sendMail, ActionType.uploadStatus]
+    return ea
+    
