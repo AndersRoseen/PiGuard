@@ -45,11 +45,11 @@ class StatusHandler:
     
         if analysis.motion_detected:
             print("ALARM!!!!!")
-            self.__mail_sender.send_mail(img_stream)
+            self.__mail_sender.send_mail(analysis.current_image)
         else:
             print("Everything is fine")
     
-        self.__uploader.upload_file_stream(img_stream, something_changed)
+        self.__uploader.upload_file_stream(analysis.current_image, analysis.motion_detected)
     
     def __analyze(self, status):
         analysis = Analysis()

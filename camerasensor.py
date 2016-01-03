@@ -3,6 +3,8 @@ import io
 from imagestream import ImageStream
 from sensors import ISensor
 
+print("Camera Sensor...")
+
 class CameraSensor(ISensor):
     __cam = picamera.PiCamera()
     
