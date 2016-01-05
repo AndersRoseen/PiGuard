@@ -1,8 +1,9 @@
 import configparser
-from uploader import PictureUploader
+from uploader import DropboxUploader
 from mailsender import MailSender
-from cameramanager import CameraManager
+from camerasensor import CameraSensor
 from motiondetector import MotionDetector
+from status import Event, ActionType, StatusHandler, StatusGenerator
 
 config = configparser.ConfigParser()
 config.read('piguard.ini')
@@ -14,7 +15,7 @@ def get_sampling_interval():
 
 def get_uploader():
     global config
-    return PictureUploader(config['dropbox']['token'], config.getint('general','data_update_interval'))
+    return DropboxUploader(config['dropbox']['token'], config.getint('general','data_update_interval'))
 
 def get_mail_sender():
     global config
@@ -27,13 +28,42 @@ def get_mail_sender():
 
     return MailSender(user, passw, server, port, mfrom, mto)
     
-def get_camera_manager():
-    return CameraManager()
+def get_camera_sensor():
+    return CameraSensor()
     
 def get_motion_detector():
     return MotionDetector()
     
 def get_sensors():
     sensors = []
-    sensors.append(get_camera_manager())
+    sensors.append(get_camera_sensor())
     return sensors
+    
+def get_status_analyzers():
+    analyzers = []
+    analyzers.append(get_motion_detector())
+    return analyzers
+    
+def get_actions():
+    actions = {}
+    actions[ActionType.sendMail] = get_mail_sender()
+    actions[ActionType.uploadStatus] = get_uploader()
+    
+    return actions
+    
+def get_actions_per_event():
+    ea = {}
+    ea[Event.empty] = [ActionType.uploadStatus]
+    ea[Event.motionDetected] = [ActionType.sendMail, ActionType.uploadStatus]
+    return ea
+    
+def get_status_handler():
+    analyzers = get_status_analyzers()
+    actions = get_actions()
+    actions_per_event = get_actions_per_event()
+    
+    return StatusHandler(analyzers, actions, actions_per_event)
+    
+def get_status_generator():
+    sensors = get_sensors()
+    return StatusGenerator(sensors)

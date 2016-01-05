@@ -1,7 +1,7 @@
 import io
 from PIL import Image
 
-class ImageStream:
+class ImageStream(object):
     
     def __init__(self, stream):
         self.__stream = stream

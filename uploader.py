@@ -2,7 +2,9 @@ import dropbox
 import datetime
 import os
 
-class PictureUploader:
+from status import IAction, Event
+
+class DropboxUploader(IAction):
     
     def __init__(self, token, upload_interval=1):
         dbx = dropbox.Dropbox(token)
@@ -20,10 +22,19 @@ class PictureUploader:
         file_name = self.__get_file_name()
         dest_path = os.path.join('/', file_name)
         self.__dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
+        
+    def __should_force(self, events):
+        for event in events:
+            if event is Event.motionDetected:
+                return True
+        return False
             
-    def upload_file_stream(self, file_stream, is_alarm):
+    def upload_file_stream(self, file_stream, force=False):
         now = datetime.datetime.now()
-        if is_alarm or (now - self.__last_upload).seconds > self.__upload_interval:
+        if force or (now - self.__last_upload).seconds > self.__upload_interval:
             self.__upload_stream_to_dropbox(file_stream)
             print("Picture uploaded on Dropbox!")
             self.__last_upload = now
+            
+    def perform_action(self, status, events):
+        self.upload_file_stream(status.picture, self.__should_force(events))

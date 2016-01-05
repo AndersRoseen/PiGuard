@@ -1,8 +1,11 @@
 import picamera
 import io
 from imagestream import ImageStream
+from sensors import ISensor
 
-class CameraManager:
+print("Camera Sensor...")
+
+class CameraSensor(ISensor):
     __cam = picamera.PiCamera()
     
     def capture_picture(self):

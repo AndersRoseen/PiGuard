@@ -5,7 +5,9 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
-class MailSender:
+from status import IAction
+
+class MailSender(IAction):
     
     def __init__(self, user, passw, smtp_addr, smtp_port, mail_to, mail_from):
         self.__last_sent_mail_date = datetime.datetime.now()
@@ -18,7 +20,7 @@ class MailSender:
         
     
     
-    def send_mail(self, file_stream):
+    def __send_mail(self, file_stream):
         now = datetime.datetime.now()
         if (now - self.__last_sent_mail_date).seconds < 60:
             return
@@ -44,3 +46,7 @@ class MailSender:
         print("Warning mail sent!")
     
         self.__last_sent_mail_date = now
+        
+        
+    def perform_action(self, status, events):
+        self.__send_mail(status.picture)
