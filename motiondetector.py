@@ -8,25 +8,25 @@ from status import IStatusAnalyzer, Event
 class MotionDetector(IStatusAnalyzer):
     
     def __init__(self):
-        self.__last_picture_stream = None
+        self._last_picture_stream = None
     
-    def __img_diff(self, im1, im2):
+    def _img_diff(self, im1, im2):
         h = ImageChops.difference(im1, im2).histogram()
         return math.sqrt(reduce(operator.add, map(lambda h, i: h*(i**2), h, range(256)))/(float(im1.size[0])*im1.size[1]))
         
-    def __detect_motion(self, new_picture_stream):
+    def _detect_motion(self, new_picture_stream):
         
-        if self.__last_picture_stream is None:
-            self.__last_picture_stream = new_picture_stream
+        if self._last_picture_stream is None:
+            self._last_picture_stream = new_picture_stream
             return False
         
-        im1 = self.__last_picture_stream.get_image()
+        im1 = self._last_picture_stream.get_image()
         im2 = new_picture_stream.get_image()
-        mean_diff = self.__img_diff(im1, im2)
+        mean_diff = self._img_diff(im1, im2)
         
         motion_occurred = mean_diff > 10
         
-        self.__last_picture_stream = new_picture_stream
+        self._last_picture_stream = new_picture_stream
         
         if motion_occurred:
             print("motion status: Motion detected!")
@@ -37,7 +37,6 @@ class MotionDetector(IStatusAnalyzer):
         
     
     def analyze_status(self, status):
-        events = []
-        if self.__detect_motion(status.picture):
-            events.append(Event.motionDetected)
-        return events
+        if self._detect_motion(status.picture):
+            return [Event.motionDetected]
+        return []

@@ -3,14 +3,12 @@ import io
 from imagestream import ImageStream
 from sensors import ISensor
 
-print("Camera Sensor...")
-
 class CameraSensor(ISensor):
-    __cam = picamera.PiCamera()
+    _cam = picamera.PiCamera()
     
     def capture_picture(self):
         stream = io.BytesIO()
-        self.__cam.capture(stream, format='jpeg')
+        self._cam.capture(stream, format='jpeg')
         return ImageStream(stream)
         
     def update_status(self, status):
