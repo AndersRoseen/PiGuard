@@ -3,7 +3,7 @@ from enum import Enum
 import datetime
 import factory
 
-class Status:
+class Status(object):
     
     def __init__(self):
         self.timestamp = datetime.datetime.now()
@@ -15,10 +15,10 @@ class Event(Enum):
         
 
 
-class StatusGenerator:
+class StatusGenerator(object):
     
-    def __init__(self):
-        self.__sensors = factory.get_sensors()
+    def __init__(self, sensors):
+        self.__sensors = sensors
     
     def get_current_status(self):
         status = Status()
@@ -28,12 +28,12 @@ class StatusGenerator:
         return status
 
 
-class StatusHandler:
+class StatusHandler(object):
     
-    def __init__(self):
-        self.__analyzers = factory.get_status_analyzers()
-        self.__actions = factory.get_actions()
-        self.__actions_per_event = factory.get_actions_per_event()
+    def __init__(self, analyzers, actions, actions_per_event):
+        self.__analyzers = analyzers
+        self.__actions = actions
+        self.__actions_per_event = actions_per_event
         
     def manage_status(self, status):
         events = self.__analyze(status)
@@ -67,7 +67,8 @@ class StatusHandler:
             action.perform_action(status, events)
             
 
-class IStatusAnalyzer(metaclass=ABCMeta):
+class IStatusAnalyzer(object):
+    __metaclass__ = ABCMeta
     
     @abstractmethod
     def analyze_status(self, status):
@@ -80,7 +81,8 @@ class ActionType(Enum):
     
 
 
-class IAction(metaclass=ABCMeta):
+class IAction(object):
+    __metaclass__ = ABCMeta
         
     @abstractmethod
     def perform_action(self, status, events):

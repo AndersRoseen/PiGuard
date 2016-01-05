@@ -4,7 +4,7 @@ import os
 
 from status import IAction, Event
 
-class PictureUploader(IAction):
+class DropboxUploader(IAction):
     
     def __init__(self, token, upload_interval=1):
         dbx = dropbox.Dropbox(token)
