@@ -64,7 +64,10 @@ class StatusHandler(object):
     def _process_actions(self, actions, status):
         for action_type, events in actions.items():
             action = self._actions[action_type]
-            action.perform_action(status, events)
+            try:
+                action.perform_action(status, events)
+            except:
+                print("Issue while performing ", action_type)
             
 
 class IStatusAnalyzer(object):
