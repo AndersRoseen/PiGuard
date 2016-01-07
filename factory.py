@@ -4,6 +4,7 @@ from mailsender import MailSender
 from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
+from console import ConsoleServer, CommandHandler
 
 config = configparser.ConfigParser()
 config.read('piguard.ini')
@@ -67,3 +68,7 @@ def get_status_handler():
 def get_status_generator():
     sensors = get_sensors()
     return StatusGenerator(sensors)
+
+def get_console_server(commands_queue):
+    HOST, PORT = "localhost", 9999
+    return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
