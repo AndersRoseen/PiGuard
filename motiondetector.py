@@ -29,9 +29,9 @@ class MotionDetector(IStatusAnalyzer):
         self._last_picture_stream = new_picture_stream
         
         if motion_occurred:
-            print("motion status: Motion detected!")
+            print("motion status: Motion detected! ", mean_diff)
         else:
-            print("motion status: Everything is quiet!")
+            print("motion status: Everything is quiet! ", mean_diff)
         
         return motion_occurred
         
