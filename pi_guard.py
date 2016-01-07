@@ -38,7 +38,10 @@ class StatusesGeneratotThread(threading.Thread):
                 sleep(sampling_frequence)
             except:
                 print("Unexpected error - Main")
-
+                
+        #add an extra status in the queue to avoid
+        status = generator.get_current_status()
+        statuses_queue.put(status)
         print("Statuses generator thread stopped!")
 
 
@@ -73,9 +76,9 @@ if __name__ == "__main__":
             break
         elif command == "start":
             if handler_thread.stop and generator_thread.stop:
-                handler_thread.stop = True
-                handler_thread.start()
-                generator_thread.stop = True
+                handler_thread = StatusesHandlerThread(statuses_queue)
+                generator_thread = StatusesGeneratotThread(statuses_queue)
                 generator_thread.start()
+                handler_thread.start()
 
     print("PiGuard Terminated")

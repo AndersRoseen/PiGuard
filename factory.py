@@ -70,5 +70,5 @@ def get_status_generator():
     return StatusGenerator(sensors)
 
 def get_console_server(commands_queue):
-    HOST, PORT = "localhost", 9999
+    HOST, PORT = "192.168.1.18", 9999
     return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
