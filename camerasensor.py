@@ -4,6 +4,7 @@ from imagestream import ImageStream
 from sensors import ISensor
 from fractions import Fraction
 
+
 class CameraSensor(ISensor):
     
     def __init__(self):

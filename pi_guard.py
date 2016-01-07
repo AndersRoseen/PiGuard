@@ -3,16 +3,23 @@ import queue
 import threading
 import factory
 
-class StatusesHandlerThread(threading.Thread):
+
+class BaseStatusesThread(threading.Thread):
 
     def __init__(self, statuses_queue):
         super().__init__()
         self._statuses_queue = statuses_queue
-        self.stop = False
+        self._stop = False
+
+    def stop(self):
+        self._stop = True
+
+
+class StatusesHandlerThread(BaseStatusesThread):
 
     def run(self):
         handler = factory.get_status_handler()
-        while not self.stop:
+        while not self._stop:
             try:
                 status = statuses_queue.get()
                 handler.manage_status(status)
@@ -22,16 +29,12 @@ class StatusesHandlerThread(threading.Thread):
 
         print("Statuses handler thread stopped!")
 
-class StatusesGeneratotThread(threading.Thread):
 
-    def __init__(self, statuses_queue):
-        super().__init__()
-        self._statuses_queue = statuses_queue
-        self.stop = False
+class StatusesGeneratorThread(BaseStatusesThread):
 
     def run(self):
         generator = factory.get_status_generator()
-        while not self.stop:
+        while not self._stop:
             try:
                 status = generator.get_current_status()
                 statuses_queue.put(status)
@@ -45,8 +48,8 @@ class StatusesGeneratotThread(threading.Thread):
         print("Statuses generator thread stopped!")
 
 
-def command_console():
-    command_console_server.serve_forever()
+def command_console(server):
+    server.serve_forever()
 
 if __name__ == "__main__":
     sampling_frequence = factory.get_sampling_interval()
@@ -57,11 +60,11 @@ if __name__ == "__main__":
     handler_thread = StatusesHandlerThread(statuses_queue)
     handler_thread.start()
 
-    generator_thread = StatusesGeneratotThread(statuses_queue)
+    generator_thread = StatusesGeneratorThread(statuses_queue)
     generator_thread.start()
 
     command_console_server = factory.get_console_server(commands_queue)
-    console_thread = threading.Thread(target=command_console)
+    console_thread = threading.Thread(target=command_console, args=(command_console_server, ))
     console_thread.start()
 
     while True:
@@ -77,7 +80,7 @@ if __name__ == "__main__":
         elif command == "start":
             if handler_thread.stop and generator_thread.stop:
                 handler_thread = StatusesHandlerThread(statuses_queue)
-                generator_thread = StatusesGeneratotThread(statuses_queue)
+                generator_thread = StatusesGeneratorThread(statuses_queue)
                 generator_thread.start()
                 handler_thread.start()
 

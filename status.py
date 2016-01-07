@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 import datetime
-import factory
+
 
 class Status(object):
     
@@ -9,10 +9,10 @@ class Status(object):
         self.timestamp = datetime.datetime.now()
         self.picture = None
 
+
 class Event(Enum):
     empty = "empty"
     motionDetected = "motionDetected"
-        
 
 
 class StatusGenerator(object):
@@ -82,7 +82,6 @@ class ActionType(Enum):
     sendMail = "sendMail"
     uploadStatus = "uploadStatus"
     
-
 
 class IAction(object):
     __metaclass__ = ABCMeta

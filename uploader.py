@@ -4,6 +4,12 @@ import os
 
 from status import IAction, Event
 
+
+def get_file_name():
+        now = datetime.datetime.now()
+        return "pic_%02d%02d%d_%02d%02d%02d.jpg" % (now.day, now.month, now.year, now.hour, now.minute, now.second)
+
+
 class DropboxUploader(IAction):
     
     def __init__(self, token, upload_interval=1):
@@ -13,13 +19,9 @@ class DropboxUploader(IAction):
         
         self._last_upload = datetime.datetime.now()
         self._upload_interval = upload_interval * 60
-        
-    def _get_file_name(self):
-        now = datetime.datetime.now()
-        return "pic_%02d%02d%d_%02d%02d%02d.jpg" % (now.day,now.month, now.year, now.hour, now.minute, now.second)
     
     def _upload_stream_to_dropbox(self, file_stream):
-        file_name = self._get_file_name()
+        file_name = get_file_name()
         dest_path = os.path.join('/', file_name)
         self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
         
