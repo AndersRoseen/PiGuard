@@ -9,13 +9,13 @@ class BaseStatusesThread(threading.Thread):
     def __init__(self, statuses_queue):
         super().__init__()
         self._statuses_queue = statuses_queue
-        self._stop = False
+        self._continue = True
 
     def stop(self):
-        self._stop = True
+        self._continue = False
         
     def is_stopped(self):
-        return self._stop
+        return not self._continue
 
 
 class StatusesHandlerThread(BaseStatusesThread):
@@ -24,7 +24,7 @@ class StatusesHandlerThread(BaseStatusesThread):
         handler = factory.get_status_handler()
         sampling_frequence = factory.get_sampling_interval()
         queue_timeout = sampling_frequence * 3
-        while not self._stop:
+        while self._continue:
             try:
                 status = statuses_queue.get(timeout=queue_timeout)
                 handler.manage_status(status)
@@ -42,7 +42,7 @@ class StatusesGeneratorThread(BaseStatusesThread):
     def run(self):
         generator = factory.get_status_generator()
         sampling_frequence = factory.get_sampling_interval()
-        while not self._stop:
+        while self._continue:
             try:
                 status = generator.get_current_status()
                 statuses_queue.put(status)
@@ -87,5 +87,9 @@ if __name__ == "__main__":
                 generator_thread = StatusesGeneratorThread(statuses_queue)
                 generator_thread.start()
                 handler_thread.start()
-
+    
+    generator_thread.join()
+    handler_thread.join()
+    console_thread.join()
+    
     print("PiGuard Terminated")
