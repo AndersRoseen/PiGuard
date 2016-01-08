@@ -4,21 +4,21 @@ import threading
 import factory
 
 
-class BaseStatusesThread(threading.Thread):
+class BaseQueuedThread(threading.Thread):
 
-    def __init__(self, statuses_queue):
+    def __init__(self, shared_queue):
         super().__init__()
-        self._statuses_queue = statuses_queue
+        self._queue = shared_queue
         self._continue = True
 
     def stop(self):
         self._continue = False
-        
+
     def is_stopped(self):
         return not self._continue
 
 
-class StatusesHandlerThread(BaseStatusesThread):
+class StatusesHandlerThread(BaseQueuedThread):
 
     def run(self):
         handler = factory.get_status_handler()
@@ -26,9 +26,9 @@ class StatusesHandlerThread(BaseStatusesThread):
         queue_timeout = sampling_frequence * 3
         while self._continue:
             try:
-                status = statuses_queue.get(timeout=queue_timeout)
+                status = self._queue.get(timeout=queue_timeout)
                 handler.manage_status(status)
-                statuses_queue.task_done()
+                self._queue.task_done()
             except queue.Empty:
                 print("Status handler timeout!")
             except:
@@ -37,7 +37,7 @@ class StatusesHandlerThread(BaseStatusesThread):
         print("Statuses handler thread stopped!")
 
 
-class StatusesGeneratorThread(BaseStatusesThread):
+class StatusesGeneratorThread(BaseQueuedThread):
 
     def run(self):
         generator = factory.get_status_generator()
@@ -45,7 +45,7 @@ class StatusesGeneratorThread(BaseStatusesThread):
         while self._continue:
             try:
                 status = generator.get_current_status()
-                statuses_queue.put(status)
+                self._queue.put(status)
                 sleep(sampling_frequence)
             except:
                 print("Unexpected error - Main")
@@ -53,43 +53,65 @@ class StatusesGeneratorThread(BaseStatusesThread):
         print("Statuses generator thread stopped!")
 
 
-def command_console(server):
-    server.serve_forever()
+class CommandConsoleThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self.server = factory.get_console_server(shared_queue)
+
+    def run(self):
+        self.server.serve_forever()
+
+
+class System(object):
+
+    def __init__(self):
+        self._statuses_queue = queue.Queue()
+        self._handler_thread = StatusesHandlerThread(self._statuses_queue)
+        self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
+
+        self._commands_queue = queue.Queue()
+        self._console_thread = CommandConsoleThread(self._commands_queue)
+        self._console_thread.start()
+
+    def get_next_command(self):
+        return self._commands_queue.get()
+
+    def start(self):
+        if not self._handler_thread.is_alive():
+            if self._handler_thread.is_stopped():
+                self._handler_thread = StatusesHandlerThread(self._statuses_queue)
+
+            self._handler_thread.start()
+
+        if not self._generator_thread.is_alive():
+            if self._generator_thread.is_stopped():
+                self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
+
+            self._generator_thread.start()
+
+    def stop(self):
+        self._handler_thread.stop()
+        self._generator_thread.stop()
+
+    def shutdown(self):
+        self.stop()
+        self._console_thread.server.shutdown()
+
 
 if __name__ == "__main__":
 
-    statuses_queue = queue.Queue()
-    commands_queue = queue.Queue()
-
-    handler_thread = StatusesHandlerThread(statuses_queue)
-    handler_thread.start()
-
-    generator_thread = StatusesGeneratorThread(statuses_queue)
-    generator_thread.start()
-
-    command_console_server = factory.get_console_server(commands_queue)
-    console_thread = threading.Thread(target=command_console, args=(command_console_server, ))
-    console_thread.start()
+    system = System()
+    system.start()
 
     while True:
-        command = commands_queue.get()
+        command = system.get_next_command()
         if command == "stop":
-            handler_thread.stop()
-            generator_thread.stop()
+            system.stop()
         elif command == "exit":
-            handler_thread.stop()
-            generator_thread.stop()
-            command_console_server.shutdown()
+            system.shutdown()
             break
         elif command == "start":
-            if handler_thread.is_stopped() and generator_thread.is_stopped():
-                handler_thread = StatusesHandlerThread(statuses_queue)
-                generator_thread = StatusesGeneratorThread(statuses_queue)
-                generator_thread.start()
-                handler_thread.start()
-    
-    generator_thread.join()
-    handler_thread.join()
-    console_thread.join()
+            system.start()
     
     print("PiGuard Terminated")
