@@ -91,6 +91,13 @@ class System(object):
             self.stop()
             self.send_message("Goodbye and thank you for using PiGuard!")
             keep_running = False
+        elif command == "help":
+            self.send_message("PiGuard available commands:")
+            self.send_message("\tstart: starts the processes status generator and the status handler")
+            self.send_message("\tstop: stops the processes status generator and the status handler")
+            self.send_message("\tshutdown: stops all the processes and terminates the application")
+            self.send_message("\texit: terminate the console session")
+            self.send_message("\thelp: display this command")
         else:
             self.send_message(command + ": command not found")
 
