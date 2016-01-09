@@ -61,6 +61,7 @@ class CommandConsoleThread(BaseQueuedThread):
 
     def run(self):
         self.server.serve_forever()
+        print("Console server stopped!")
 
 
 class System(object):
@@ -75,8 +76,24 @@ class System(object):
         self._console_thread = CommandConsoleThread(self._commands_queue, self._messages_queue)
         self._console_thread.start()
 
-    def get_next_command(self):
-        return self._commands_queue.get()
+    def get_and_execute_command(self):
+        command = self._commands_queue.get()
+        return self._execute_command(command)
+
+    def _execute_command(self, command):
+        keep_running = True
+
+        if command == "stop":
+            self.stop()
+        elif command == "start":
+            self.start()
+        elif command == "shutdown":
+            keep_running = False
+        else:
+            self.send_message(command + ": command not found")
+
+        self.send_message("END")
+        return keep_running
         
     def send_message(self, mess):
         self._messages_queue.put(mess)
@@ -106,8 +123,6 @@ class System(object):
             self.send_message("Statuses' generator started!")
         else:
             self.send_message("Statuses' generator already started!")
-            
-        self.send_message("END")
 
     def stop(self):
         self.send_message("Stopping PiGuard...")
@@ -118,14 +133,13 @@ class System(object):
         self._generator_thread.join()
         self.send_message("Statuses' generator stopped!")
         self.send_message("PiGuard succesfuly stopped")
-        self.send_message("END")
 
     def shutdown(self):
         self.send_message("Shutting down PiGuard...")
         self.stop()
         self.send_message("Shutting command console...")
         self._console_thread.server.shutdown()
-        self.send_message("END")
+
 
 if __name__ == "__main__":
 
@@ -133,17 +147,8 @@ if __name__ == "__main__":
     system.start()
     system.clear_message_queue()
     
-    while True:
-        command = system.get_next_command()
-        if command == "stop":
-            system.stop()
-        elif command == "shutdown":
-            system.shutdown()
-            break
-        elif command == "start":
-            system.start()
-        else:
-            system.send_message(command + ": command not found")
-            system.send_message("END")
-    
+    while system.get_and_execute_command():
+        pass
+
+    system.shutdown()
     print("PiGuard Terminated")
