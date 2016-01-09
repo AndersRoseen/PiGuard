@@ -88,6 +88,8 @@ class System(object):
         elif command == "start":
             self.start()
         elif command == "shutdown":
+            self.stop()
+            self.send_message("Goodbye and thank you for using PiGuard!")
             keep_running = False
         else:
             self.send_message(command + ": command not found")
@@ -134,10 +136,7 @@ class System(object):
         self.send_message("Statuses' generator stopped!")
         self.send_message("PiGuard succesfuly stopped")
 
-    def shutdown(self):
-        self.send_message("Shutting down PiGuard...")
-        self.stop()
-        self.send_message("Shutting command console...")
+    def shutdown_console_server(self):
         self._console_thread.server.shutdown()
 
 
@@ -150,5 +149,5 @@ if __name__ == "__main__":
     while system.get_and_execute_command():
         pass
 
-    system.shutdown()
+    system.shutdown_console_server()
     print("PiGuard Terminated")
