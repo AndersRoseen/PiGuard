@@ -5,6 +5,7 @@ from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
+import os
 
 config = configparser.ConfigParser()
 config.read('piguard.ini')
@@ -41,26 +42,26 @@ def get_motion_detector():
 
 
 def get_sensors():
-    sensors = []
+    sensors = list()
     sensors.append(get_camera_sensor())
     return sensors
 
 
 def get_status_analyzers():
-    analyzers = []
+    analyzers = list()
     analyzers.append(get_motion_detector())
     return analyzers
 
 
 def get_actions():
-    actions = {}
+    actions = dict()
     actions[ActionType.sendMail] = get_mail_sender()
     actions[ActionType.uploadStatus] = get_uploader()
     return actions
 
 
 def get_actions_per_event():
-    ea = {}
+    ea = dict()
     ea[Event.empty] = [ActionType.uploadStatus]
     ea[Event.motionDetected] = [ActionType.sendMail, ActionType.uploadStatus]
     return ea
@@ -79,6 +80,12 @@ def get_status_generator():
     return StatusGenerator(sensors)
 
 
+def get_ip_address():
+    f = os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1')
+    ip = f.read()
+    return ip
+
+
 def get_console_server(commands_queue, messages_queue):
-    HOST, PORT = "192.168.1.18", 9999
+    HOST, PORT = get_ip_address(), 2727
     return ConsoleServer((HOST, PORT), CommandHandler, commands_queue, messages_queue)
