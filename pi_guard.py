@@ -34,7 +34,7 @@ class StatusHandlerThread(BaseQueuedThread):
             except:
                 print("Unexpected error - Worker")
 
-        print("Statuses handler thread stopped!")
+        print("Status handler thread stopped!")
 
 
 class StatusGeneratorThread(BaseQueuedThread):
@@ -50,7 +50,7 @@ class StatusGeneratorThread(BaseQueuedThread):
             except:
                 print("Unexpected error - Main")
                 
-        print("Statuses generator thread stopped!")
+        print("Status generator thread stopped!")
 
 
 class CommandConsoleThread(BaseQueuedThread):
@@ -109,31 +109,31 @@ class System(object):
         if not self._handler_thread.is_alive():
             if self._handler_thread.is_stopped():
                 self._handler_thread = StatusHandlerThread(self._statuses_queue)
-                self.send_message("Statuses' handler initialized!")
+                self.send_message("Status handler initialized!")
 
             self._handler_thread.start()
-            self.send_message("Statuses' handler started!")
+            self.send_message("Status handler started!")
         else:
-            self.send_message("Statuses' handler already started!")
+            self.send_message("Status handler already started!")
 
         if not self._generator_thread.is_alive():
             if self._generator_thread.is_stopped():
                 self._generator_thread = StatusGeneratorThread(self._statuses_queue)
-                self.send_message("Statuses' generator initialized!")
+                self.send_message("Status generator initialized!")
 
             self._generator_thread.start()
-            self.send_message("Statuses' generator started!")
+            self.send_message("Status generator started!")
         else:
-            self.send_message("Statuses' generator already started!")
+            self.send_message("Status generator already started!")
 
     def stop(self):
         self.send_message("Stopping PiGuard...")
         self._handler_thread.stop()
         self._handler_thread.join()
-        self.send_message("Statuses' handler stopped!")
+        self.send_message("Status handler stopped!")
         self._generator_thread.stop()
         self._generator_thread.join()
-        self.send_message("Statuses' generator stopped!")
+        self.send_message("Status generator stopped!")
         self.send_message("PiGuard successfully stopped")
 
     def shutdown_console_server(self):
