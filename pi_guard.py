@@ -18,7 +18,7 @@ class BaseQueuedThread(threading.Thread):
         return not self._continue
 
 
-class StatusesHandlerThread(BaseQueuedThread):
+class StatusHandlerThread(BaseQueuedThread):
 
     def run(self):
         handler = factory.get_status_handler()
@@ -37,7 +37,7 @@ class StatusesHandlerThread(BaseQueuedThread):
         print("Statuses handler thread stopped!")
 
 
-class StatusesGeneratorThread(BaseQueuedThread):
+class StatusGeneratorThread(BaseQueuedThread):
 
     def run(self):
         generator = factory.get_status_generator()
@@ -68,8 +68,8 @@ class System(object):
 
     def __init__(self):
         self._statuses_queue = queue.Queue()
-        self._handler_thread = StatusesHandlerThread(self._statuses_queue)
-        self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
+        self._handler_thread = StatusHandlerThread(self._statuses_queue)
+        self._generator_thread = StatusGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
         self._messages_queue = queue.Queue()
@@ -108,7 +108,7 @@ class System(object):
         self.send_message("Starting PiGuard...")
         if not self._handler_thread.is_alive():
             if self._handler_thread.is_stopped():
-                self._handler_thread = StatusesHandlerThread(self._statuses_queue)
+                self._handler_thread = StatusHandlerThread(self._statuses_queue)
                 self.send_message("Statuses' handler initialized!")
 
             self._handler_thread.start()
@@ -118,7 +118,7 @@ class System(object):
 
         if not self._generator_thread.is_alive():
             if self._generator_thread.is_stopped():
-                self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
+                self._generator_thread = StatusGeneratorThread(self._statuses_queue)
                 self.send_message("Statuses' generator initialized!")
 
             self._generator_thread.start()
@@ -134,7 +134,7 @@ class System(object):
         self._generator_thread.stop()
         self._generator_thread.join()
         self.send_message("Statuses' generator stopped!")
-        self.send_message("PiGuard succesfuly stopped")
+        self.send_message("PiGuard successfully stopped")
 
     def shutdown_console_server(self):
         self._console_thread.server.shutdown()
