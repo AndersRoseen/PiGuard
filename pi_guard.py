@@ -55,9 +55,9 @@ class StatusesGeneratorThread(BaseQueuedThread):
 
 class CommandConsoleThread(BaseQueuedThread):
 
-    def __init__(self, shared_queue):
+    def __init__(self, shared_queue, message_queue):
         BaseQueuedThread.__init__(self, shared_queue)
-        self.server = factory.get_console_server(shared_queue)
+        self.server = factory.get_console_server(shared_queue, message_queue)
 
     def run(self):
         self.server.serve_forever()
@@ -71,47 +71,79 @@ class System(object):
         self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
-        self._console_thread = CommandConsoleThread(self._commands_queue)
+        self._messages_queue = queue.Queue()
+        self._console_thread = CommandConsoleThread(self._commands_queue, self._messages_queue)
         self._console_thread.start()
 
     def get_next_command(self):
         return self._commands_queue.get()
+        
+    def send_message(self, mess):
+        self._messages_queue.put(mess)
+    
+    def clear_message_queue(self):
+        while not self._messages_queue.empty():
+            self._messages_queue.get_nowait()
 
     def start(self):
+        self.send_message("Starting PiGuard...")
         if not self._handler_thread.is_alive():
             if self._handler_thread.is_stopped():
                 self._handler_thread = StatusesHandlerThread(self._statuses_queue)
+                self.send_message("Statuses' handler initialized!")
 
             self._handler_thread.start()
+            self.send_message("Statuses' handler started!")
+        else:
+            self.send_message("Statuses' handler already started!")
 
         if not self._generator_thread.is_alive():
             if self._generator_thread.is_stopped():
                 self._generator_thread = StatusesGeneratorThread(self._statuses_queue)
+                self.send_message("Statuses' generator initialized!")
 
             self._generator_thread.start()
+            self.send_message("Statuses' generator started!")
+        else:
+            self.send_message("Statuses' generator already started!")
+            
+        self.send_message("END")
 
     def stop(self):
+        self.send_message("Stopping PiGuard...")
         self._handler_thread.stop()
+        self._handler_thread.join()
+        self.send_message("Statuses' handler stopped!")
         self._generator_thread.stop()
+        self._generator_thread.join()
+        self.send_message("Statuses' generator stopped!")
+        self.send_message("PiGuard succesfuly stopped")
+        self.send_message("END")
 
     def shutdown(self):
+        self.send_message("Shutting down PiGuard...")
         self.stop()
+        self.send_message("Shutting command console...")
         self._console_thread.server.shutdown()
-
+        self.send_message("END")
 
 if __name__ == "__main__":
 
     system = System()
     system.start()
-
+    system.clear_message_queue()
+    
     while True:
         command = system.get_next_command()
         if command == "stop":
             system.stop()
-        elif command == "exit":
+        elif command == "shutdown":
             system.shutdown()
             break
         elif command == "start":
             system.start()
+        else:
+            system.send_message(command + ": command not found")
+            system.send_message("END")
     
     print("PiGuard Terminated")
