@@ -30,7 +30,12 @@ class DropboxUploader(IAction):
     
     def _upload_stream_to_dropbox(self, file_stream, file_name):
         dest_path = os.path.join('/', file_name)
-        self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
+        try:
+            self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
+            return True
+        except dropbox.exceptions.ApiError as err:
+            print('Dropbox API error: ', err)
+            return False
         
     def _should_force(self, events):
         for event in events:
@@ -44,7 +49,12 @@ class DropboxUploader(IAction):
 
     def upload_statuses_list(self, statuses):
         mode = dropbox.files.WriteMode('overwrite', None)
-        self._dropbox.files_upload(json.dumps(statuses), '/statuses.json', mode=mode)
+        try:
+            self._dropbox.files_upload(json.dumps(statuses), '/statuses.json', mode=mode)
+            return True
+        except dropbox.exceptions.ApiError as err:
+            print('Dropbox API error: ', err)
+            return False
 
     def upload_status(self, status, events):
         now = datetime.datetime.now()
@@ -53,18 +63,19 @@ class DropboxUploader(IAction):
             json_status = prepare_json_status(status, events)
             statuses = self.get_statuses_list()
             statuses["statuses"].insert(0, json_status)
-            self.upload_statuses_list(statuses)
-            self.upload_file_stream(status.picture, json_status["picture"], self._should_force(events))
-
-            self._last_upload = now
+            success = self.upload_statuses_list(statuses)
+            success = success and self.upload_file_stream(status.picture, json_status["picture"], force)
+            if success:
+                self._last_upload = now
 
     def get_statuses_list(self):
         try:
             _, res = self._dropbox.files_download('/statuses.json')
             data = str(res.content, "utf-8")
             return json.loads(data)
-        except:
-            print('Status list file not found... creating a new one!')
+        except dropbox.exceptions.ApiError as err:
+            print('Dropbox API error: ', err)
+            print('Status list file not found or impossible to download... creating a new one!')
             return {"statuses": list()}
 
     def perform_action(self, status, events):
