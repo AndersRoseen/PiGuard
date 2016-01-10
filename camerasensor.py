@@ -6,7 +6,7 @@ from fractions import Fraction
 
 camera = picamera.PiCamera()
 camera.awb_mode = 'off'
-camera.awb_gains = (Fraction(29, 32), Fraction(869, 256))
+camera.awb_gains = (Fraction(119, 128), Fraction(631, 256))
 
 class CameraSensor(ISensor):
     
