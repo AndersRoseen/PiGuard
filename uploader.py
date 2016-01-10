@@ -25,6 +25,8 @@ class DropboxUploader(IAction):
         auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(app_key, app_secret)
 
         authorize_url = auth_flow.start()
+        print("This is the first time you use PiGuard with Dropbox,")
+        print("to give PiGuard access to your Dropbox folder do the following:")
         print("1. Go to: " + authorize_url)
         print("2. Click \"Allow\" (you might have to log in first).")
         print("3. Copy the authorization code.")
@@ -61,8 +63,9 @@ class DropboxUploader(IAction):
         return False
             
     def upload_file_stream(self, file_stream, file_name, force=False):
-        self._upload_stream_to_dropbox(file_stream, file_name)
+        result = self._upload_stream_to_dropbox(file_stream, file_name)
         print("Picture uploaded on Dropbox!")
+        return result
 
     def upload_statuses_list(self, statuses):
         mode = dropbox.files.WriteMode('overwrite', None)
@@ -82,6 +85,7 @@ class DropboxUploader(IAction):
             statuses["statuses"].insert(0, json_status)
             success = self.upload_statuses_list(statuses)
             success = success and self.upload_file_stream(status.picture, json_status["picture"], force)
+            print(success)
             if success:
                 self._last_upload = now
 
