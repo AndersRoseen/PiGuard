@@ -19,7 +19,24 @@ def prepare_json_status(status, events):
 
 
 class DropboxUploader(IAction):
-    
+
+    @staticmethod
+    def generate_auth_token(app_key, app_secret):
+        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(app_key, app_secret)
+
+        authorize_url = auth_flow.start()
+        print("1. Go to: " + authorize_url)
+        print("2. Click \"Allow\" (you might have to log in first).")
+        print("3. Copy the authorization code.")
+        auth_code = input("Enter the authorization code here: ").strip()
+
+        try:
+            access_token, _ = auth_flow.finish(auth_code)
+            return access_token
+        except Exception as e:
+            print('Error: %s' % (e, ))
+            return
+
     def __init__(self, token, upload_interval=1):
         dbx = dropbox.Dropbox(token)
         dbx.users_get_current_account()
