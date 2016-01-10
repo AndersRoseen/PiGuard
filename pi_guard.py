@@ -20,14 +20,17 @@ class BaseQueuedThread(threading.Thread):
 
 class StatusHandlerThread(BaseQueuedThread):
 
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self._handler = factory.get_status_handler()
+        self._sampling_frequence = factory.get_sampling_interval()
+
     def run(self):
-        handler = factory.get_status_handler()
-        sampling_frequence = factory.get_sampling_interval()
-        queue_timeout = sampling_frequence * 3
+        queue_timeout = self._sampling_frequence * 3
         while self._continue:
             try:
                 status = self._queue.get(timeout=queue_timeout)
-                handler.manage_status(status)
+                self._handler.manage_status(status)
                 self._queue.task_done()
             except queue.Empty:
                 print("Status handler timeout!")
@@ -39,14 +42,17 @@ class StatusHandlerThread(BaseQueuedThread):
 
 class StatusGeneratorThread(BaseQueuedThread):
 
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self._generator = factory.get_status_generator()
+        self._sampling_frequence = factory.get_sampling_interval()
+
     def run(self):
-        generator = factory.get_status_generator()
-        sampling_frequence = factory.get_sampling_interval()
         while self._continue:
             try:
-                status = generator.get_current_status()
+                status = self._generator.get_current_status()
                 self._queue.put(status)
-                sleep(sampling_frequence)
+                sleep(self._sampling_frequence)
             except:
                 print("Unexpected error - Main")
                 
