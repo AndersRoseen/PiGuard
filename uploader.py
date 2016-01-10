@@ -85,7 +85,6 @@ class DropboxUploader(IAction):
             statuses["statuses"].insert(0, json_status)
             success = self.upload_statuses_list(statuses)
             success = success and self.upload_file_stream(status.picture, json_status["picture"], force)
-            print(success)
             if success:
                 self._last_upload = now
 
