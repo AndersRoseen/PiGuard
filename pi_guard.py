@@ -1,26 +1,166 @@
-from cameramanager import CameraManager
-from motiondetector import MotionDetector
-
 from time import sleep
-
+import queue
+import threading
 import factory
 
-camera_manager = CameraManager()
-uploader = factory.get_uploader('piguard.ini')
-mail_sender = factory.get_mail_sender('piguard.ini')
-motion_detector = MotionDetector()
 
-while True:
-    img_stream = camera_manager.capture_picture()
-    something_changed = motion_detector.detect_motion(img_stream)
-    
-    if something_changed:
-        print("ALARM!!!!!")
-        mail_sender.send_mail(img_stream)
-    else:
-        print("Everything is fine")
-    
-    uploader.upload_file_stream(img_stream, something_changed)
-    
-    sleep(2)
+class BaseQueuedThread(threading.Thread):
 
+    def __init__(self, shared_queue):
+        super().__init__()
+        self._queue = shared_queue
+        self._continue = True
+
+    def stop(self):
+        self._continue = False
+
+    def is_stopped(self):
+        return not self._continue
+
+
+class StatusHandlerThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self._handler = factory.get_status_handler()
+        self._sampling_frequence = factory.get_sampling_interval()
+
+    def run(self):
+        queue_timeout = self._sampling_frequence * 3
+        while self._continue:
+            try:
+                status = self._queue.get(timeout=queue_timeout)
+                self._handler.manage_status(status)
+                self._queue.task_done()
+            except queue.Empty:
+                print("Status handler timeout!")
+            except:
+                print("Unexpected error - Worker")
+
+        print("Status handler thread stopped!")
+
+
+class StatusGeneratorThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self._generator = factory.get_status_generator()
+        self._sampling_frequence = factory.get_sampling_interval()
+
+    def run(self):
+        while self._continue:
+            try:
+                status = self._generator.get_current_status()
+                self._queue.put(status)
+                sleep(self._sampling_frequence)
+            except:
+                print("Unexpected error - Main")
+                
+        print("Status generator thread stopped!")
+
+
+class CommandConsoleThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue, message_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self.server = factory.get_console_server(shared_queue, message_queue)
+
+    def run(self):
+        self.server.serve_forever()
+        print("Console server stopped!")
+
+
+class System(object):
+
+    def __init__(self):
+        self._statuses_queue = queue.Queue()
+        self._handler_thread = StatusHandlerThread(self._statuses_queue)
+        self._generator_thread = StatusGeneratorThread(self._statuses_queue)
+
+        self._commands_queue = queue.Queue()
+        self._messages_queue = queue.Queue()
+        self._console_thread = CommandConsoleThread(self._commands_queue, self._messages_queue)
+        self._console_thread.start()
+
+    def get_and_execute_command(self):
+        command = self._commands_queue.get()
+        return self._execute_command(command)
+
+    def _execute_command(self, command):
+        keep_running = True
+
+        if command == "stop":
+            self.stop()
+        elif command == "start":
+            self.start()
+        elif command == "shutdown":
+            self.stop()
+            self.send_message("Goodbye and thank you for using PiGuard!")
+            keep_running = False
+        elif command == "help":
+            self.send_message("PiGuard available commands:")
+            self.send_message("\tstart: starts the processes status generator and the status handler")
+            self.send_message("\tstop: stops the processes status generator and the status handler")
+            self.send_message("\tshutdown: stops all the processes and terminates the application")
+            self.send_message("\texit: terminate the console session")
+            self.send_message("\thelp: display this command")
+        else:
+            self.send_message(command + ": command not found")
+
+        self.send_message("END")
+        return keep_running
+        
+    def send_message(self, mess):
+        self._messages_queue.put(mess)
+    
+    def clear_message_queue(self):
+        while not self._messages_queue.empty():
+            self._messages_queue.get_nowait()
+
+    def start(self):
+        self.send_message("Starting PiGuard...")
+        if not self._handler_thread.is_alive():
+            if self._handler_thread.is_stopped():
+                self._handler_thread = StatusHandlerThread(self._statuses_queue)
+                self.send_message("Status handler initialized!")
+
+            self._handler_thread.start()
+            self.send_message("Status handler started!")
+        else:
+            self.send_message("Status handler already started!")
+
+        if not self._generator_thread.is_alive():
+            if self._generator_thread.is_stopped():
+                self._generator_thread = StatusGeneratorThread(self._statuses_queue)
+                self.send_message("Status generator initialized!")
+
+            self._generator_thread.start()
+            self.send_message("Status generator started!")
+        else:
+            self.send_message("Status generator already started!")
+
+    def stop(self):
+        self.send_message("Stopping PiGuard...")
+        self._handler_thread.stop()
+        self._handler_thread.join()
+        self.send_message("Status handler stopped!")
+        self._generator_thread.stop()
+        self._generator_thread.join()
+        self.send_message("Status generator stopped!")
+        self.send_message("PiGuard successfully stopped")
+
+    def shutdown_console_server(self):
+        self._console_thread.server.shutdown()
+
+
+if __name__ == "__main__":
+
+    system = System()
+    system.start()
+    system.clear_message_queue()
+    
+    while system.get_and_execute_command():
+        pass
+
+    system.shutdown_console_server()
+    print("PiGuard Terminated")

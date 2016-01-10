@@ -1,13 +1,17 @@
-import io
+from PIL import Image
 
-class ImageStream:
+
+class ImageStream(object):
     
     def __init__(self, stream):
-        self.__stream = stream
+        self._stream = stream
         
     def get_stream(self):
-        self.__stream.seek(0)
-        return self.__stream
+        self._stream.seek(0)
+        return self._stream
+    
+    def get_image(self):
+        return Image.open(self.get_stream())
         
     def __del__(self):
-        self.__stream.close()
+        self._stream.close()
