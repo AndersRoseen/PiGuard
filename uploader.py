@@ -9,6 +9,7 @@ from status import IAction, Event
 def get_file_name(time):
         return "pic_%02d%02d%d_%02d%02d%02d.jpg" % (time.day, time.month, time.year, time.hour, time.minute, time.second)
 
+
 def prepare_json_status(status, events):
     json_status = dict()
     json_status["timestamp"] = str(status.timestamp)
