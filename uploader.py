@@ -11,7 +11,7 @@ def get_file_name(time):
 
 def prepare_json_status(status, events):
     json_status = dict()
-    json_status["timestamp"] = status.timestamp
+    json_status["timestamp"] = str(status.timestamp)
     json_status["picture"] = get_file_name(status.timestamp)
     json_status["events"] = list(map(str, events))
     return json_status
@@ -67,7 +67,4 @@ class DropboxUploader(IAction):
             return {"statuses": list()}
 
     def perform_action(self, status, events):
-        json_status = prepare_json_status(status, events)
-        statuses = self.get_statuses_list()
-        statuses["statuses"].insert(0, json_status)
-        self.upload_file_stream(status.picture, self._should_force(events))
+        self.upload_status(status, events)
