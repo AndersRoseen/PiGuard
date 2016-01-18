@@ -114,7 +114,8 @@ class System(object):
         return keep_running
         
     def send_message(self, mess):
-        self._messages_queue.put(mess)
+        if self._messages_queue is not None:
+            self._messages_queue.put(mess)
     
     def clear_message_queue(self):
         while not self._messages_queue.empty():
@@ -160,7 +161,6 @@ if __name__ == "__main__":
 
     system = System()
     system.start()
-    system.clear_message_queue()
     
     while system.get_and_execute_command():
         pass

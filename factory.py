@@ -92,6 +92,6 @@ def get_ip_address():
     return ip
 
 
-def get_console_server(commands_queue, messages_queue):
+def get_console_server(commands_queue):
     HOST, PORT = get_ip_address(), 2727
-    return ConsoleServer((HOST, PORT), CommandHandler, commands_queue, messages_queue)
+    return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
