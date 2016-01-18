@@ -61,9 +61,9 @@ class StatusGeneratorThread(BaseQueuedThread):
 
 class CommandConsoleThread(BaseQueuedThread):
 
-    def __init__(self, shared_queue, message_queue):
+    def __init__(self, shared_queue):
         BaseQueuedThread.__init__(self, shared_queue)
-        self.server = factory.get_console_server(shared_queue, message_queue)
+        self.server = factory.get_console_server(shared_queue)
 
     def run(self):
         self.server.serve_forever()
@@ -78,16 +78,17 @@ class System(object):
         self._generator_thread = StatusGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
-        self._messages_queue = queue.Queue()
-        self._console_thread = CommandConsoleThread(self._commands_queue, self._messages_queue)
+        self._messages_queue = None
+        self._console_thread = CommandConsoleThread(self._commands_queue)
         self._console_thread.start()
 
     def get_and_execute_command(self):
-        command = self._commands_queue.get()
-        return self._execute_command(command)
+        command, messages_queue = self._commands_queue.get()
+        return self._execute_command(command, messages_queue)
 
-    def _execute_command(self, command):
+    def _execute_command(self, command, messages_queue):
         keep_running = True
+        self._messages_queue = messages_queue
 
         if command == "stop":
             self.stop()
@@ -108,6 +109,8 @@ class System(object):
             self.send_message(command + ": command not found")
 
         self.send_message("END")
+        self._messages_queue = None
+
         return keep_running
         
     def send_message(self, mess):
