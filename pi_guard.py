@@ -70,6 +70,17 @@ class CommandConsoleThread(BaseQueuedThread):
         print("Console server stopped!")
 
 
+class RestServiceThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self.server = factory.get_rest_server(shared_queue)
+
+    def run(self):
+        self.server.serve_forever()
+        print("REST server stopped!")
+
+
 class System(object):
 
     def __init__(self):
@@ -81,6 +92,8 @@ class System(object):
         self._messages_queue = None
         self._console_thread = CommandConsoleThread(self._commands_queue)
         self._console_thread.start()
+        self.rest_service_thread = RestServiceThread(self._commands_queue)
+        self.rest_service_thread.start()
 
     def get_and_execute_command(self):
         command, messages_queue = self._commands_queue.get()
@@ -155,6 +168,7 @@ class System(object):
 
     def shutdown_console_server(self):
         self._console_thread.server.shutdown()
+        self.rest_service_thread.server.shutdown()
 
 
 if __name__ == "__main__":

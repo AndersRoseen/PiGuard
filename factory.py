@@ -5,6 +5,7 @@ from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
+from restservice import RestServer, RestRequestHandler
 import os
 
 config = configparser.ConfigParser()
@@ -95,3 +96,7 @@ def get_ip_address():
 def get_console_server(commands_queue):
     HOST, PORT = get_ip_address(), 2727
     return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
+
+def get_rest_server(commands_queue):
+    HOST, PORT = get_ip_address(), 2728
+    return RestServer((HOST, PORT), RestRequestHandler, commands_queue)
