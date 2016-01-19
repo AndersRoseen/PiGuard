@@ -1,4 +1,5 @@
 from time import sleep
+from enum import Enum
 import queue
 import threading
 import factory
@@ -83,7 +84,15 @@ class RestServiceThread(BaseQueuedThread):
 
 class System(object):
 
+    class SystemStatus(Enum):
+        started = "started"
+        stopped = "stopped"
+
+
     def __init__(self):
+
+        self.system_status = System.SystemStatus.stopped
+
         self._statuses_queue = queue.Queue()
         self._handler_thread = StatusHandlerThread(self._statuses_queue)
         self._generator_thread = StatusGeneratorThread(self._statuses_queue)
@@ -105,8 +114,12 @@ class System(object):
 
         if command == "stop":
             self.stop()
+            self.system_status = System.SystemStatus.stopped
         elif command == "start":
             self.start()
+            self.system_status = System.SystemStatus.started
+        elif command == "status":
+            self.send_message("PiGuard status: ", self.system_status.value)
         elif command == "shutdown":
             self.stop()
             self.send_message("Goodbye and thank you for using PiGuard!")
@@ -174,7 +187,7 @@ class System(object):
 if __name__ == "__main__":
 
     system = System()
-    system.start()
+    #system.start()
     
     while system.get_and_execute_command():
         pass
