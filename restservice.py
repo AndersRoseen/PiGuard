@@ -6,7 +6,16 @@ import queue
 class RestRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-        command = self.path[1:]
+
+        api_type = self.path[1:self.path.index("/", 1)]
+        parameter = self.path[self.path.index("/", 1)+1:]
+
+        if api_type == "command":
+            self.execute_command(parameter)
+        elif api_type == "image":
+            self.retrieve_image(parameter)
+
+    def execute_command(self, command):
         messages_queue = queue.Queue()
         self.server.commands.put((command, messages_queue))
 
@@ -26,6 +35,21 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(bytes(json.dumps(json_response), "utf-8"))
+
+    def retrieve_image(self, image_name):
+        try:
+            if image_name.endswith(".jpg"):
+                image_file = open("/home/pi/Pictures/PiGuard" + image_name, 'rb')
+                self.send_response(200)
+                self.send_header("Content-type", "image/jpeg")
+                self.end_headers()
+                self.wfile.write(image_file.read())
+                image_file.close()
+            else:
+                self.send_error(500, "Permission denied")
+        except:
+            self.send_error(404, "File Not Found: %s" % image_name)
+
 
 
 class RestServer(HTTPServer):
