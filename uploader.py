@@ -126,9 +126,15 @@ class DiskSaver(IAction):
             self._last_upload = now
 
     def get_statuses_list(self):
-        with open("/home/pi/Documents/PiGuardData/statuses.json", 'r') as statuses_file:
+        if os.path.exists("/home/pi/Documents/PiGuardData/statuses.json"):
+            statuses_file = open("/home/pi/Documents/PiGuardData/statuses.json", "r")
             statuses_list = json.load(statuses_file)
             statuses_file.close()
+            return statuses_list
+        else:
+            print("statuses.json not found!")
+            statuses_list = dict()
+            statuses_list["statuses"] = list()
             return statuses_list
 
     def save_statuses_list(self, statuses):
@@ -136,7 +142,5 @@ class DiskSaver(IAction):
             json.dump(statuses, statuses_file)
             statuses_file.close()
 
-    def save_image(self, image_name, image_stream):
-        with open("/home/pi/Pictures/PiGuard/" + image_name, 'wb') as image_file:
-            image_file.write(image_stream.get_stream())
-            image_file.close()
+    def save_image(self, image_stream, image_name):
+        image_stream.get_image().save("/home/pi/Pictures/PiGuard/" + image_name)
