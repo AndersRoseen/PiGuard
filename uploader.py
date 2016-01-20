@@ -17,6 +17,12 @@ def prepare_json_status(status, events):
     json_status["events"] = list(map(str, events))
     return json_status
 
+def should_force(events):
+    for event in events:
+        if event is Event.motionDetected:
+            return True
+    return False
+
 
 class DropboxUploader(IAction):
 
@@ -55,12 +61,6 @@ class DropboxUploader(IAction):
         except dropbox.exceptions.ApiError as err:
             print('Dropbox API error: ', err)
             return False
-        
-    def _should_force(self, events):
-        for event in events:
-            if event is Event.motionDetected:
-                return True
-        return False
             
     def upload_file_stream(self, file_stream, file_name, force=False):
         result = self._upload_stream_to_dropbox(file_stream, file_name)
@@ -78,7 +78,7 @@ class DropboxUploader(IAction):
 
     def upload_status(self, status, events):
         now = datetime.datetime.now()
-        force = self._should_force(events)
+        force = should_force(events)
         if force or (now - self._last_upload).seconds > self._upload_interval:
             json_status = prepare_json_status(status, events)
             statuses = self.get_statuses_list()
@@ -100,3 +100,43 @@ class DropboxUploader(IAction):
 
     def perform_action(self, status, events):
         self.upload_status(status, events)
+
+
+class DiskSaver(IAction):
+
+    def __init__(self, upload_interval=1):
+        self._last_upload = datetime.datetime.now()
+        self._upload_interval = upload_interval * 60
+
+        if not os.path.exists("/home/pi/Documents/PiGuardData/"):
+            os.makedirs("/home/pi/Documents/PiGuardData/")
+
+        if not os.path.exists("/home/pi/Pictures/PiGuard/"):
+            os.makedirs("/home/pi/Pictures/PiGuard/")
+
+    def perform_action(self, status, events):
+        now = datetime.datetime.now()
+        force = should_force(events)
+        if force or (now - self._last_upload).seconds > self._upload_interval:
+            json_status = prepare_json_status(status, events)
+            statuses = self.get_statuses_list()
+            statuses["statuses"].insert(0, json_status)
+            self.save_statuses_list(statuses)
+            self.save_image(status.picture, json_status["picture"])
+            self._last_upload = now
+
+    def get_statuses_list(self):
+        with open("/home/pi/Documents/PiGuardData/statuses.json", 'r') as statuses_file:
+            statuses_list = json.load(statuses_file)
+            statuses_file.close()
+            return statuses_list
+
+    def save_statuses_list(self, statuses):
+        with open("/home/pi/Documents/PiGuardData/statuses.json", 'w') as statuses_file:
+            json.dump(statuses, statuses_file)
+            statuses_file.close()
+
+    def save_image(self, image_name, image_stream):
+        with open("/home/pi/Pictures/PiGuard/" + image_name, 'wb') as image_file:
+            image_file.write(image_stream.get_stream())
+            image_file.close()

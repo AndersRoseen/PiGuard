@@ -1,5 +1,5 @@
 import configparser
-from uploader import DropboxUploader
+from uploader import DropboxUploader, DiskSaver
 from mailsender import MailSender
 from camerasensor import CameraSensor
 from motiondetector import MotionDetector
@@ -20,13 +20,14 @@ def get_sampling_interval():
 
 def get_uploader():
     global config
-    token = config['dropbox']['login_token']
-    if len(token) == 0:
-        token = DropboxUploader.generate_auth_token(config['dropbox']['app_key'], config['dropbox']['app_secret'])
-        config['dropbox']['login_token'] = token
-        with open('piguard.ini', 'w') as configfile:
-            config.write(configfile)
-    return DropboxUploader(token, config.getint('general', 'data_update_interval'))
+    # token = config['dropbox']['login_token']
+    # if len(token) == 0:
+    #    token = DropboxUploader.generate_auth_token(config['dropbox']['app_key'], config['dropbox']['app_secret'])
+    #    config['dropbox']['login_token'] = token
+    #    with open('piguard.ini', 'w') as configfile:
+    #        config.write(configfile)
+    # return DropboxUploader(token, config.getint('general', 'data_update_interval'))
+    return DiskSaver(config.getint('general', 'data_update_interval'))
 
 
 def get_mail_sender():
