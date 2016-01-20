@@ -121,7 +121,9 @@ class DiskSaver(IAction):
             json_status = prepare_json_status(status, events)
             statuses = self.get_statuses_list()
             statuses["statuses"].insert(0, json_status)
+            print("Saving status on disk!")
             self.save_statuses_list(statuses)
+            print("Saving picture on disk!")
             self.save_image(status.picture, json_status["picture"])
             self._last_upload = now
 
