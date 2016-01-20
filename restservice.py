@@ -14,6 +14,8 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             self.execute_command(parameter)
         elif api_type == "image":
             self.retrieve_image(parameter)
+        elif api_type == "statuses":
+            self.retrieve_statuses()
 
     def execute_command(self, command):
         messages_queue = queue.Queue()
@@ -49,6 +51,17 @@ class RestRequestHandler(BaseHTTPRequestHandler):
                 self.send_error(500, "Permission denied")
         except:
             self.send_error(404, "File Not Found: %s" % image_name)
+
+    def retrieve_statuses(self):
+        try:
+            file = open("/home/pi/Documents/PiGuardData/statuses.json", 'rb')
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(file.read())
+            file.close()
+        except:
+            self.send_error(404, "File Not Found: statuses.json")
 
 
 
