@@ -39,7 +39,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
     def retrieve_image(self, image_name):
         try:
             if image_name.endswith(".jpg"):
-                image_file = open("/home/pi/Pictures/PiGuard" + image_name, 'rb')
+                image_file = open("/home/pi/Pictures/PiGuard/" + image_name, 'rb')
                 self.send_response(200)
                 self.send_header("Content-type", "image/jpeg")
                 self.end_headers()
