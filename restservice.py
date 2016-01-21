@@ -64,7 +64,6 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, "File Not Found: statuses.json")
 
 
-
 class RestServer(HTTPServer):
 
     def __init__(self, server_address, RequestHandlerClass, commands_queue):

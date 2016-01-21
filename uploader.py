@@ -2,6 +2,7 @@ import dropbox
 import datetime
 import os
 import json
+import storagemanager
 
 from status import IAction, Event
 
@@ -128,21 +129,10 @@ class DiskSaver(IAction):
             self._last_upload = now
 
     def get_statuses_list(self):
-        if os.path.exists("/home/pi/Documents/PiGuardData/statuses.json"):
-            statuses_file = open("/home/pi/Documents/PiGuardData/statuses.json", "r")
-            statuses_list = json.load(statuses_file)
-            statuses_file.close()
-            return statuses_list
-        else:
-            print("statuses.json not found!")
-            statuses_list = dict()
-            statuses_list["statuses"] = list()
-            return statuses_list
+        return storagemanager.storage.get_statuses()
 
     def save_statuses_list(self, statuses):
-        with open("/home/pi/Documents/PiGuardData/statuses.json", 'w') as statuses_file:
-            json.dump(statuses, statuses_file)
-            statuses_file.close()
+        storagemanager.storage.save_statuses(statuses)
 
     def save_image(self, image_stream, image_name):
         image_stream.get_image().save("/home/pi/Pictures/PiGuard/" + image_name)
