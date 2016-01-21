@@ -22,14 +22,14 @@ class StatusesStorage(object):
 
     def get_statuses(self):
         with self._semaphore:
-            statuses_file = open(self.filePath, "r")
+            statuses_file = open(self.file_path, "r")
             statuses_list = json.load(statuses_file)
             statuses_file.close()
             return statuses_list
 
     def save_statuses(self, statuses):
         with self._semaphore:
-            with open(self.filePath, "w") as statuses_file:
+            with open(self.file_path, "w") as statuses_file:
                 json.dump(statuses, statuses_file)
 
 storage = StatusesStorage()
