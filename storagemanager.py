@@ -11,7 +11,7 @@ class StatusesStorage(object):
         full_path = path + file_name
         if not os.path.exists(path):
             os.makedirs(path)
-        if os.path.exists(full_path):
+        if not os.path.exists(full_path):
             statuses_list = dict()
             statuses_list["statuses"] = list()
             with open(full_path, "w") as statuses_file:
