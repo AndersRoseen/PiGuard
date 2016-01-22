@@ -24,10 +24,13 @@ class StatusesStorage(object):
 
     def get_statuses(self):
         with self._semaphore:
-            statuses_file = open(self.file_path, "r")
-            statuses_list = json.load(statuses_file)
-            statuses_file.close()
-            return statuses_list
+            return self._unsafe_get_statuses()
+
+    def _unsafe_get_statuses(self):
+        statuses_file = open(self.file_path, "r")
+        statuses_list = json.load(statuses_file)
+        statuses_file.close()
+        return statuses_list
 
     def write_statuses_on_stream(self, stream):
         with self._semaphore:
@@ -36,9 +39,12 @@ class StatusesStorage(object):
 
     def save_statuses(self, statuses):
         with self._semaphore:
-            with open(self.file_path, "w") as statuses_file:
-                json.dump(statuses, statuses_file)
-                self._last_update = datetime.datetime.now()
+            self._unsafe_save_statuses(statuses)
+
+    def _unsafe_save_statuses(self, statuses):
+        with open(self.file_path, "w") as statuses_file:
+            json.dump(statuses, statuses_file)
+            self._last_update = datetime.datetime.now()
 
     def _clean_up_old_statuses(self):
         statuses = self.get_statuses()
@@ -52,7 +58,18 @@ class StatusesStorage(object):
                 break
 
         statuses["statuses"] = statuses["statuses"][:delete_index]
-        self.save_statuses(statuses)
+        if self._last_update > current_date:
+            with self._semaphore:
+                new_statuses = self._unsafe_get_statuses()
+                for i, status in enumerate(new_statuses["statuses"]):
+                    status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+                    if status_timestamp > current_date:
+                        statuses.insert(i, status)
+                    else:
+                        break
+                self._unsafe_save_statuses(statuses)
+        else:
+            self.save_statuses(statuses)
 
 
 storage = StatusesStorage()
