@@ -42,12 +42,10 @@ class RestRequestHandler(BaseHTTPRequestHandler):
     def retrieve_image(self, image_name):
         try:
             if image_name.endswith(".jpg"):
-                image_file = open("/home/pi/Pictures/PiGuard/" + image_name, 'rb')
                 self.send_response(200)
                 self.send_header("Content-type", "image/jpeg")
                 self.end_headers()
-                self.wfile.write(image_file.read())
-                image_file.close()
+                storagemanager.manager.write_image_on_stream(image_name, self.wfile)
             else:
                 self.send_error(500, "Permission denied")
         except:
@@ -58,7 +56,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            storagemanager.storage.write_statuses_on_stream(self.wfile)
+            storagemanager.manager.write_statuses_on_stream(self.wfile)
         except:
             self.send_error(404, "File Not Found: statuses.json")
 

@@ -109,30 +109,14 @@ class DiskSaver(IAction):
         self._last_upload = datetime.datetime.now()
         self._upload_interval = upload_interval * 60
 
-        if not os.path.exists("/home/pi/Documents/PiGuardData/"):
-            os.makedirs("/home/pi/Documents/PiGuardData/")
-
-        if not os.path.exists("/home/pi/Pictures/PiGuard/"):
-            os.makedirs("/home/pi/Pictures/PiGuard/")
-
     def perform_action(self, status, events):
         now = datetime.datetime.now()
         force = should_force(events)
         if force or (now - self._last_upload).seconds > self._upload_interval:
             json_status = prepare_json_status(status, events)
-            statuses = self.get_statuses_list()
-            statuses["statuses"].insert(0, json_status)
             print("Saving status on disk!")
-            self.save_statuses_list(statuses)
+            storagemanager.manager.add_status(json_status)
             print("Saving picture on disk!")
-            self.save_image(status.picture, json_status["picture"])
+            storagemanager.manager.save_image(status.picture, json_status["picture"])
             self._last_upload = now
 
-    def get_statuses_list(self):
-        return storagemanager.storage.get_statuses()
-
-    def save_statuses_list(self, statuses):
-        storagemanager.storage.save_statuses(statuses)
-
-    def save_image(self, image_stream, image_name):
-        image_stream.get_image().save("/home/pi/Pictures/PiGuard/" + image_name)
