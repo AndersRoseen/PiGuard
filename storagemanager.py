@@ -1,6 +1,7 @@
 import threading
 import json
 import os
+import datetime
 
 
 class StatusesStorage(object):
@@ -19,6 +20,7 @@ class StatusesStorage(object):
 
         self.file_path = full_path
         self._semaphore = threading.BoundedSemaphore()
+        self._last_update = datetime.datetime.now()
 
     def get_statuses(self):
         with self._semaphore:
@@ -36,5 +38,21 @@ class StatusesStorage(object):
         with self._semaphore:
             with open(self.file_path, "w") as statuses_file:
                 json.dump(statuses, statuses_file)
+                self._last_update = datetime.datetime.now()
+
+    def _clean_up_old_statuses(self):
+        statuses = self.get_statuses()
+        current_date = datetime.datetime.now()
+
+        delete_index = len(statuses["statuses"])
+        for i, status in enumerate(statuses["statuses"]):
+            status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            if (current_date - status_timestamp).days > 2:
+                delete_index = i
+                break
+
+        statuses["statuses"] = statuses["statuses"][:delete_index]
+        self.save_statuses(statuses)
+
 
 storage = StatusesStorage()
