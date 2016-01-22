@@ -1,6 +1,7 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import queue
+import storagemanager
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
@@ -54,12 +55,10 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
     def retrieve_statuses(self):
         try:
-            file = open("/home/pi/Documents/PiGuardData/statuses.json", 'rb')
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(file.read())
-            file.close()
+            storagemanager.storage.write_statuses_on_stream(self.wfile)
         except:
             self.send_error(404, "File Not Found: statuses.json")
 

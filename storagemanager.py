@@ -27,6 +27,11 @@ class StatusesStorage(object):
             statuses_file.close()
             return statuses_list
 
+    def write_statuses_on_stream(self, stream):
+        with self._semaphore:
+            with open(self.file_path, "rb") as statuses_file:
+                stream.write(statuses_file.read())
+
     def save_statuses(self, statuses):
         with self._semaphore:
             with open(self.file_path, "w") as statuses_file:
