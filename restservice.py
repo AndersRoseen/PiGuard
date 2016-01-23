@@ -3,21 +3,44 @@ import json
 import queue
 import storagemanager
 import ssl
+import authmanager
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
-        api_type = self.path[1:self.path.index("/", 1)]
-        parameter = self.path[self.path.index("/", 1)+1:]
+        if self.verify_authentication():
+            api_type = self.path[1:self.path.index("/", 1)]
+            parameter = self.path[self.path.index("/", 1)+1:]
 
-        if api_type == "command":
-            self.execute_command(parameter)
-        elif api_type == "image":
-            self.retrieve_image(parameter)
-        elif api_type == "statuses":
-            self.retrieve_statuses()
+            if api_type == "command":
+                self.execute_command(parameter)
+            elif api_type == "image":
+                self.retrieve_image(parameter)
+            elif api_type == "statuses":
+                self.retrieve_statuses()
+
+        else:
+            self.do_AUTH()
+
+    def verify_authentication(self):
+        if self.headers['Authorization'] is not None and authmanager.authenticate(self.headers['Authorization'][6:]):
+            return True
+        else:
+            return False
+
+    def do_AUTH(self):
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", "Basic realm=\"PiGuard\"")
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(bytes("Authentication failed!", "UTF-8"))
+
+    def do_OK_HEAD(self, content_type):
+        self.send_response(200)
+        self.send_header("Content-type", content_type)
+        self.end_headers()
 
     def execute_command(self, command):
         messages_queue = queue.Queue()
@@ -34,18 +57,13 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         json_response["command_execution"] = "completed"
         json_response["command_output"] = command_output
 
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-
+        self.do_OK_HEAD("application/json")
         self.wfile.write(bytes(json.dumps(json_response), "utf-8"))
 
     def retrieve_image(self, image_name):
         try:
             if image_name.endswith(".jpg"):
-                self.send_response(200)
-                self.send_header("Content-type", "image/jpeg")
-                self.end_headers()
+                self.do_OK_HEAD("image/jpeg")
                 storagemanager.manager.write_image_on_stream(image_name, self.wfile)
             else:
                 self.send_error(500, "Permission denied")
@@ -54,9 +72,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
     def retrieve_statuses(self):
         try:
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
+            self.do_OK_HEAD("application/json")
             storagemanager.manager.write_statuses_on_stream(self.wfile)
         except:
             self.send_error(404, "File Not Found: statuses.json")
@@ -67,4 +83,4 @@ class RestServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, commands_queue):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
-        self.socket = ssl.wrap_socket (self.socket, certfile='/home/pi/server.pem', server_side=True)
+        self.socket = ssl.wrap_socket(self.socket, certfile="/home/pi/Documents/Certificates/PiGuardServerCertificate.pem", server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
