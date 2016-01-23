@@ -2,6 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import queue
 import storagemanager
+import ssl
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
@@ -66,3 +67,4 @@ class RestServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, commands_queue):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
+        self.socket = ssl.wrap_socket (self.socket, certfile='/home/pi/server.pem', server_side=True)
