@@ -1,12 +1,14 @@
-import factory
+class AuthManager(object):
+
+    def __init__(self, credentials):
+        self._credentials = credentials
+
+    def authenticate(self, token):
+        if token in self._credentials:
+            return True
+        else:
+            return False
 
 
-_credentials = factory.get_credentials()
 
 
-def authenticate(token):
-    global _credentials
-    if token in _credentials:
-        return True
-    else:
-        return False

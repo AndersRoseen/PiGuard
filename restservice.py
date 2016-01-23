@@ -3,7 +3,6 @@ import json
 import queue
 import storagemanager
 import ssl
-import authmanager
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
@@ -25,7 +24,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             self.do_AUTH()
 
     def verify_authentication(self):
-        if self.headers['Authorization'] is not None and authmanager.authenticate(self.headers['Authorization'][6:]):
+        if self.headers['Authorization'] is not None and self.server.auth_manager.authenticate(self.headers["Authorization"][6:]):
             return True
         else:
             return False
@@ -80,7 +79,8 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
 class RestServer(HTTPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue):
+    def __init__(self, server_address, RequestHandlerClass, commands_queue, auth_manager):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
         self.socket = ssl.wrap_socket(self.socket, certfile="/home/pi/Documents/Certificates/PiGuardServerCertificate.pem", server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
+        self.auth_manager = auth_manager
