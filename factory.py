@@ -111,5 +111,6 @@ def get_auth_manager():
 
 
 def get_rest_server(commands_queue):
+    certificate_path = config["rest_service"]["server_certificate_location"]
     HOST, PORT = get_ip_address(), 2728
-    return RestServer((HOST, PORT), RestRequestHandler, commands_queue, get_auth_manager())
+    return RestServer((HOST, PORT), RestRequestHandler, commands_queue, get_auth_manager(), certificate_path)
