@@ -8,20 +8,29 @@ import ssl
 class RestRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-
         if self.verify_authentication():
-            api_type = self.path[1:self.path.index("/", 1)]
-            parameter = self.path[self.path.index("/", 1)+1:]
+            api_type, parameter = self.decode_request()
 
-            if api_type == "command":
+            if api_type == "command" and parameter is not None:
                 self.execute_command(parameter)
-            elif api_type == "image":
+            elif api_type == "image" and parameter is not None:
                 self.retrieve_image(parameter)
             elif api_type == "statuses":
                 self.retrieve_statuses()
+            else:
+                self.send_error(400, "No service found for: " + api_type)
 
         else:
             self.do_AUTH()
+
+    def decode_request(self):
+        request_path = self.path[1:]
+        if "/" in request_path:
+            api_type = request_path[:request_path.index("/", 1)]
+            parameter = request_path[request_path.index("/", 1)+1:]
+            return api_type, parameter
+        else:
+            return request_path, None
 
     def verify_authentication(self):
         if self.headers['Authorization'] is not None and self.server.auth_manager.authenticate(self.headers["Authorization"][6:]):
