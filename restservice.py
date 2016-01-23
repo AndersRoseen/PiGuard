@@ -18,7 +18,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             elif api_type == "statuses":
                 self.retrieve_statuses()
             else:
-                self.send_error(400, "No service found for: " + api_type)
+                self.send_error(400, "Method \"" + api_type + "\" not found!")
 
         else:
             self.do_AUTH()
