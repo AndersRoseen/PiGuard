@@ -3,27 +3,26 @@ import json
 import os
 import datetime
 import time
+import configmanager
 
 
 class StorageManager(object):
 
-    def __init__(self):
-        path = "/home/pi/Documents/PiGuardData/"
+    def __init__(self, statuses_path, images_path):
         file_name = "statuses.json"
-        full_path = path + file_name
-        pic_dir = "/home/pi/Pictures/PiGuard/"
-        if not os.path.exists(path):
-            os.makedirs(path)
+        full_path = statuses_path + file_name
+        if not os.path.exists(statuses_path):
+            os.makedirs(statuses_path)
         if not os.path.exists(full_path):
             statuses_list = dict()
             statuses_list["statuses"] = list()
             with open(full_path, "w") as statuses_file:
                 json.dump(statuses_list, statuses_file)
-        if not os.path.exists(pic_dir):
-            os.makedirs(pic_dir)
+        if not os.path.exists(images_path):
+            os.makedirs(images_path)
 
         self.file_path = full_path
-        self.pictures_dir = pic_dir
+        self.pictures_dir = images_path
         self._semaphore = threading.BoundedSemaphore()
         self._last_update = datetime.datetime.now()
 
@@ -96,7 +95,8 @@ class StorageManager(object):
             stream.write(image_file.read())
 
 
-manager = StorageManager()
+manager = StorageManager(configmanager.config["storage"]["statuses_location"],
+                         configmanager.config["storage"]["images_location"])
 
 
 def _clean_up_operation():

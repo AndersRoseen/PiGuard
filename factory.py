@@ -1,4 +1,3 @@
-import configparser
 from uploader import DropboxUploader, DiskSaver
 from mailsender import MailSender
 from camerasensor import CameraSensor
@@ -9,15 +8,11 @@ from restservice import RestServer, RestRequestHandler
 from authmanager import AuthManager
 import os
 import base64
-
-config = configparser.ConfigParser()
-config.read('piguard.ini')
-print('Config parser initialized!')
+import configmanager
 
 
 def get_sampling_interval():
-    global config
-    return config.getfloat('general','data_sampling_interval')
+    return configmanager.config.getfloat('general', 'data_sampling_interval')
 
 
 def get_uploader():
@@ -33,13 +28,12 @@ def get_uploader():
 
 
 def get_mail_sender():
-    global config
-    user = config['mail']['user_id']
-    passw = config['mail']['pass']
-    server = config['mail']['smtp_server']
-    port = config['mail']['smtp_port']
-    mfrom = config['mail']['from']
-    mto = config['mail']['to']
+    user = configmanager.config['mail']['user_id']
+    passw = configmanager.config['mail']['pass']
+    server = configmanager.config['mail']['smtp_server']
+    port = configmanager.config['mail']['smtp_port']
+    mfrom = configmanager.config['mail']['from']
+    mto = configmanager.config['mail']['to']
     return MailSender(user, passw, server, port, mfrom, mto)
 
 
@@ -103,7 +97,7 @@ def get_console_server(commands_queue):
 
 def get_auth_manager():
     credentials = set()
-    list_cred = config["auth"]["credentials"].split(",")
+    list_cred = configmanager.config["auth"]["credentials"].split(",")
     for cred in list_cred:
         credentials.add(str(base64.b64encode(bytes(cred, "utf-8")), "utf-8"))
 
@@ -111,6 +105,6 @@ def get_auth_manager():
 
 
 def get_rest_server(commands_queue):
-    certificate_path = config["rest_service"]["server_certificate_location"]
+    certificate_path = configmanager.config["rest_service"]["server_certificate_location"]
     HOST, PORT = get_ip_address(), 2728
     return RestServer((HOST, PORT), RestRequestHandler, commands_queue, get_auth_manager(), certificate_path)
