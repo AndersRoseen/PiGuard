@@ -24,7 +24,7 @@ def get_uploader():
     #    with open('piguard.ini', 'w') as configfile:
     #        config.write(configfile)
     # return DropboxUploader(token, config.getint('general', 'data_update_interval'))
-    return DiskSaver(config.getint('general', 'data_update_interval'))
+    return DiskSaver(configmanager.config.getint('general', 'data_update_interval'))
 
 
 def get_mail_sender():
