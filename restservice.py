@@ -88,8 +88,9 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
 class RestServer(HTTPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue, auth_manager, certificate_path):
+    def __init__(self, server_address, RequestHandlerClass, commands_queue, auth_manager, key_path, certificate_path):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
-        self.socket = ssl.wrap_socket(self.socket, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
+        self.socket = ssl.wrap_socket(self.socket, keyfile=key_path, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
         self.auth_manager = auth_manager
+
