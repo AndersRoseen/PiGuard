@@ -2,6 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import queue
 import storagemanager
+import authmanager
 import ssl
 
 
@@ -33,7 +34,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             return request_path, None
 
     def verify_authentication(self):
-        if self.headers['Authorization'] is not None and self.server.auth_manager.authenticate(self.headers["Authorization"][6:]):
+        if self.headers['Authorization'] is not None and authmanager.manager.authenticate(self.headers["Authorization"][6:]):
             return True
         else:
             return False
@@ -88,9 +89,8 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
 class RestServer(HTTPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue, auth_manager, key_path, certificate_path):
+    def __init__(self, server_address, RequestHandlerClass, commands_queue, key_path, certificate_path):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
         self.socket = ssl.wrap_socket(self.socket, keyfile=key_path, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
-        self.auth_manager = auth_manager
 
