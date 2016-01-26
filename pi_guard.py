@@ -171,12 +171,15 @@ class System(object):
 
     def stop(self):
         self.send_message("Stopping PiGuard...")
-        self._handler_thread.stop()
-        self._handler_thread.join()
-        self.send_message("Status handler stopped!")
-        self._generator_thread.stop()
-        self._generator_thread.join()
-        self.send_message("Status generator stopped!")
+        if self._handler_thread.is_alive():
+            self._handler_thread.stop()
+            self._handler_thread.join()
+            self.send_message("Status handler stopped!")
+
+        if self._generator_thread.is_alive():
+            self._generator_thread.stop()
+            self._generator_thread.join()
+            self.send_message("Status generator stopped!")
         self.send_message("PiGuard successfully stopped")
 
     def shutdown_console_server(self):
@@ -187,8 +190,7 @@ class System(object):
 if __name__ == "__main__":
 
     system = System()
-    #system.start()
-    
+
     while system.get_and_execute_command():
         pass
 
