@@ -6,14 +6,14 @@ import authmanager
 class CommandHandler(socketserver.StreamRequestHandler):
 
     def handle(self):
-        self.wfile.write(bytes("Welcome to PiGuard command console\n", "utf-8"))
+        self.wfile.write(bytes("Welcome to PiGuard command console!\n", "utf-8"))
 
         authenticated = False
         failures = 0
         while failures < 3:
-            self.wfile.write(bytes("Type username:password >>> ", "utf-8"))
+            self.wfile.write(bytes("Login (type username:password): ", "utf-8"))
             auth_data = str(self.rfile.readline().strip(), "utf-8")
-            authenticated = authmanager.manager.authenticate(authmanager.encode_credentials(auth_data))
+            authenticated = authmanager.manager.encode_and_authenticate(auth_data)
 
             if authenticated:
                 self.wfile.write(bytes("Login successful!\n", "utf-8"))
