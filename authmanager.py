@@ -14,11 +14,15 @@ class AuthManager(object):
             return False
 
 
+def encode_credentials(credentials):
+    return str(base64.b64encode(bytes(credentials, "utf-8")), "utf-8")
+
+
 def _get_credentials():
     credentials = set()
     list_cred = configmanager.config["auth"]["credentials"].split(",")
     for cred in list_cred:
-        credentials.add(str(base64.b64encode(bytes(cred, "utf-8")), "utf-8"))
+        credentials.add(encode_credentials(cred))
 
     return credentials
 
