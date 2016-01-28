@@ -1,3 +1,11 @@
+import configmanager
+import base64
+
+
+def encode_credentials(credentials):
+    return str(base64.b64encode(bytes(credentials, "utf-8")), "utf-8")
+
+
 class AuthManager(object):
 
     def __init__(self, credentials):
@@ -9,6 +17,16 @@ class AuthManager(object):
         else:
             return False
 
+    def encode_and_authenticate(self, credentials):
+        return self.authenticate(encode_credentials(credentials))
 
 
+def _get_credentials():
+    credentials = set()
+    list_cred = configmanager.config["auth"]["credentials"].split(",")
+    for cred in list_cred:
+        credentials.add(encode_credentials(cred))
 
+    return credentials
+
+manager = AuthManager(_get_credentials())
