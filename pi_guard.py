@@ -1,4 +1,5 @@
 from time import sleep
+from enum import Enum
 import queue
 import threading
 import factory
@@ -61,38 +62,64 @@ class StatusGeneratorThread(BaseQueuedThread):
 
 class CommandConsoleThread(BaseQueuedThread):
 
-    def __init__(self, shared_queue, message_queue):
+    def __init__(self, shared_queue):
         BaseQueuedThread.__init__(self, shared_queue)
-        self.server = factory.get_console_server(shared_queue, message_queue)
+        self.server = factory.get_console_server(shared_queue)
 
     def run(self):
         self.server.serve_forever()
         print("Console server stopped!")
 
 
+class RestServiceThread(BaseQueuedThread):
+
+    def __init__(self, shared_queue):
+        BaseQueuedThread.__init__(self, shared_queue)
+        self.server = factory.get_rest_server(shared_queue)
+
+    def run(self):
+        self.server.serve_forever()
+        print("REST server stopped!")
+
+
 class System(object):
 
+    class SystemStatus(Enum):
+        started = "started"
+        stopped = "stopped"
+
+
     def __init__(self):
+
+        self.system_status = System.SystemStatus.stopped
+
         self._statuses_queue = queue.Queue()
         self._handler_thread = StatusHandlerThread(self._statuses_queue)
         self._generator_thread = StatusGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
-        self._messages_queue = queue.Queue()
-        self._console_thread = CommandConsoleThread(self._commands_queue, self._messages_queue)
+        self._messages_queue = None
+        self._console_thread = CommandConsoleThread(self._commands_queue)
         self._console_thread.start()
+        self.rest_service_thread = RestServiceThread(self._commands_queue)
+        self.rest_service_thread.start()
 
     def get_and_execute_command(self):
-        command = self._commands_queue.get()
-        return self._execute_command(command)
+        command, messages_queue = self._commands_queue.get()
+        return self._execute_command(command, messages_queue)
 
-    def _execute_command(self, command):
+    def _execute_command(self, command, messages_queue):
         keep_running = True
+        self._messages_queue = messages_queue
 
         if command == "stop":
             self.stop()
+            self.system_status = System.SystemStatus.stopped
         elif command == "start":
             self.start()
+            self.system_status = System.SystemStatus.started
+        elif command == "status":
+            self.send_message("PiGuard status: " + self.system_status.value)
         elif command == "shutdown":
             self.stop()
             self.send_message("Goodbye and thank you for using PiGuard!")
@@ -108,10 +135,13 @@ class System(object):
             self.send_message(command + ": command not found")
 
         self.send_message("END")
+        self._messages_queue = None
+
         return keep_running
         
     def send_message(self, mess):
-        self._messages_queue.put(mess)
+        if self._messages_queue is not None:
+            self._messages_queue.put(mess)
     
     def clear_message_queue(self):
         while not self._messages_queue.empty():
@@ -141,24 +171,26 @@ class System(object):
 
     def stop(self):
         self.send_message("Stopping PiGuard...")
-        self._handler_thread.stop()
-        self._handler_thread.join()
-        self.send_message("Status handler stopped!")
-        self._generator_thread.stop()
-        self._generator_thread.join()
-        self.send_message("Status generator stopped!")
+        if self._handler_thread.is_alive():
+            self._handler_thread.stop()
+            self._handler_thread.join()
+            self.send_message("Status handler stopped!")
+
+        if self._generator_thread.is_alive():
+            self._generator_thread.stop()
+            self._generator_thread.join()
+            self.send_message("Status generator stopped!")
         self.send_message("PiGuard successfully stopped")
 
     def shutdown_console_server(self):
         self._console_thread.server.shutdown()
+        self.rest_service_thread.server.shutdown()
 
 
 if __name__ == "__main__":
 
     system = System()
-    system.start()
-    system.clear_message_queue()
-    
+
     while system.get_and_execute_command():
         pass
 

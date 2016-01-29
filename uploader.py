@@ -2,6 +2,7 @@ import dropbox
 import datetime
 import os
 import json
+import storagemanager
 
 from status import IAction, Event
 
@@ -16,6 +17,12 @@ def prepare_json_status(status, events):
     json_status["picture"] = get_file_name(status.timestamp)
     json_status["events"] = list(map(str, events))
     return json_status
+
+def should_force(events):
+    for event in events:
+        if event is Event.motionDetected:
+            return True
+    return False
 
 
 class DropboxUploader(IAction):
@@ -55,12 +62,6 @@ class DropboxUploader(IAction):
         except dropbox.exceptions.ApiError as err:
             print('Dropbox API error: ', err)
             return False
-        
-    def _should_force(self, events):
-        for event in events:
-            if event is Event.motionDetected:
-                return True
-        return False
             
     def upload_file_stream(self, file_stream, file_name, force=False):
         result = self._upload_stream_to_dropbox(file_stream, file_name)
@@ -78,7 +79,7 @@ class DropboxUploader(IAction):
 
     def upload_status(self, status, events):
         now = datetime.datetime.now()
-        force = self._should_force(events)
+        force = should_force(events)
         if force or (now - self._last_upload).seconds > self._upload_interval:
             json_status = prepare_json_status(status, events)
             statuses = self.get_statuses_list()
@@ -100,3 +101,22 @@ class DropboxUploader(IAction):
 
     def perform_action(self, status, events):
         self.upload_status(status, events)
+
+
+class DiskSaver(IAction):
+
+    def __init__(self, upload_interval=1):
+        self._last_upload = datetime.datetime.now()
+        self._upload_interval = upload_interval * 60
+
+    def perform_action(self, status, events):
+        now = datetime.datetime.now()
+        force = should_force(events)
+        if force or (now - self._last_upload).seconds > self._upload_interval:
+            json_status = prepare_json_status(status, events)
+            print("Saving status on disk!")
+            storagemanager.manager.add_status(json_status)
+            print("Saving picture on disk!")
+            storagemanager.manager.save_image(status.picture, json_status["picture"])
+            self._last_upload = now
+
