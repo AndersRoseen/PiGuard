@@ -1,11 +1,9 @@
 from uploader import DropboxUploader, DiskSaver
 from mailsender import MailSender
-from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
 from restservice import RestServer, RestRequestHandler
-from sensehatsensor import SenseHatSensor
 import os
 import configmanager
 
@@ -37,10 +35,12 @@ def get_mail_sender():
 
 
 def get_camera_sensor():
+    from camerasensor import CameraSensor
     return CameraSensor()
 
 
 def get_sense_hat_sensor():
+    from sensehatsensor import SenseHatSensor
     return SenseHatSensor()
 
 
@@ -50,8 +50,14 @@ def get_motion_detector():
 
 def get_sensors():
     sensors = list()
-    sensors.append(get_camera_sensor())
-    sensors.append(get_sense_hat_sensor())
+
+    sensors_list = configmanager.config["sensors"]["sensors_list"].split(",")
+    for sensor in sensors_list:
+        if sensor == "picamera":
+            sensors.append(get_camera_sensor())
+        elif sensor == "sensehat":
+            sensors.append(get_sense_hat_sensor())
+
     return sensors
 
 
