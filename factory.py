@@ -1,12 +1,12 @@
 from uploader import DropboxUploader, DiskSaver
 from mailsender import MailSender
-from camerasensor import CameraSensor
 from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
 from restservice import RestServer, RestRequestHandler
 import os
 import configmanager
+import sensors
 
 
 def get_sampling_interval():
@@ -35,18 +35,19 @@ def get_mail_sender():
     return MailSender(user, passw, server, port, mfrom, mto)
 
 
-def get_camera_sensor():
-    return CameraSensor()
-
-
 def get_motion_detector():
     return MotionDetector()
 
 
 def get_sensors():
-    sensors = list()
-    sensors.append(get_camera_sensor())
-    return sensors
+    sensors_list = list()
+
+    sensors_to_use = configmanager.config["sensors"]["sensors_list"].split(",")
+    all_sensors_retriever = sensors.get_available_sensors()
+    for sensor in sensors_to_use:
+        sensors_list.append(all_sensors_retriever[sensor]())
+
+    return sensors_list
 
 
 def get_status_analyzers():

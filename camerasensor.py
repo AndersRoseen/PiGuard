@@ -18,4 +18,4 @@ class CameraSensor(ISensor):
         return ImageStream(stream)
         
     def update_status(self, status):
-        status.picture = self.capture_picture()
+        status["picture"] = self.capture_picture()

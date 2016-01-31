@@ -47,4 +47,5 @@ class MailSender(IAction):
         self._last_sent_mail_date = now
 
     def perform_action(self, status, events):
-        self._send_mail(status.picture)
+        picture = status["picture"]
+        self._send_mail(picture)

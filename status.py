@@ -3,13 +3,6 @@ from enum import Enum
 import datetime
 
 
-class Status(object):
-    
-    def __init__(self):
-        self.timestamp = datetime.datetime.now()
-        self.picture = None
-
-
 class Event(Enum):
     empty = "empty"
     motionDetected = "motionDetected"
@@ -19,9 +12,14 @@ class StatusGenerator(object):
     
     def __init__(self, sensors):
         self._sensors = sensors
+
+    def _new_status(self):
+        status = dict()
+        status["timestamp"] = datetime.datetime.now()
+        return status
     
     def get_current_status(self):
-        status = Status()
+        status = self._new_status()
         for sensor in self._sensors:
             sensor.update_status(status)
         
