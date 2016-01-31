@@ -5,6 +5,7 @@ from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
 from restservice import RestServer, RestRequestHandler
+from sensehatsensor import SenseHatSensor
 import os
 import configmanager
 
@@ -39,6 +40,10 @@ def get_camera_sensor():
     return CameraSensor()
 
 
+def get_sense_hat_sensor():
+    return SenseHatSensor()
+
+
 def get_motion_detector():
     return MotionDetector()
 
@@ -46,6 +51,7 @@ def get_motion_detector():
 def get_sensors():
     sensors = list()
     sensors.append(get_camera_sensor())
+    sensors.append(get_sense_hat_sensor())
     return sensors
 
 
