@@ -13,10 +13,19 @@ def get_file_name(time):
 
 def prepare_json_status(status, events):
     json_status = dict()
-    json_status["timestamp"] = str(status.timestamp)
-    json_status["picture"] = get_file_name(status.timestamp)
+
+    for item in status.items():
+        key, value = item
+        if key == "timestamp":
+            value = str(value)
+        elif key == "picture":
+            value = get_file_name(status["timestamp"])
+
+        json_status[key] = value
+
     json_status["events"] = list(map(str, events))
     return json_status
+
 
 def should_force(events):
     for event in events:
@@ -85,7 +94,8 @@ class DropboxUploader(IAction):
             statuses = self.get_statuses_list()
             statuses["statuses"].insert(0, json_status)
             success = self.upload_statuses_list(statuses)
-            success = success and self.upload_file_stream(status.picture, json_status["picture"], force)
+            picture = status["picture"]
+            success = success and self.upload_file_stream(picture, json_status["picture"], force)
             if success:
                 self._last_upload = now
 
@@ -117,6 +127,7 @@ class DiskSaver(IAction):
             print("Saving status on disk!")
             storagemanager.manager.add_status(json_status)
             print("Saving picture on disk!")
-            storagemanager.manager.save_image(status.picture, json_status["picture"])
+            picture = status["picture"]
+            storagemanager.manager.save_image(picture, json_status["picture"])
             self._last_upload = now
 
