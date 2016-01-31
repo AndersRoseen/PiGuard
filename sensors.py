@@ -20,7 +20,7 @@ def _get_sense_hat_sensor():
     return SenseHatSensor(active_sensors)
 
 
-def get_available_sensors():
+def get_sensor_generators():
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor

@@ -43,9 +43,9 @@ def get_sensors():
     sensors_list = list()
 
     sensors_to_use = configmanager.config["sensors"]["sensors_list"].split(",")
-    all_sensors_retriever = sensors.get_available_sensors()
+    generators = sensors.get_sensor_generators()
     for sensor in sensors_to_use:
-        sensors_list.append(all_sensors_retriever[sensor]())
+        sensors_list.append(generators[sensor]())
 
     return sensors_list
 
