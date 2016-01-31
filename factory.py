@@ -6,6 +6,7 @@ from console import ConsoleServer, CommandHandler
 from restservice import RestServer, RestRequestHandler
 import os
 import configmanager
+import sensors
 
 
 def get_sampling_interval():
@@ -34,16 +35,6 @@ def get_mail_sender():
     return MailSender(user, passw, server, port, mfrom, mto)
 
 
-def get_camera_sensor():
-    from camerasensor import CameraSensor
-    return CameraSensor()
-
-
-def get_sense_hat_sensor():
-    from sensehatsensor import SenseHatSensor
-    return SenseHatSensor()
-
-
 def get_motion_detector():
     return MotionDetector()
 
@@ -52,11 +43,9 @@ def get_sensors():
     sensors = list()
 
     sensors_list = configmanager.config["sensors"]["sensors_list"].split(",")
+    all_sensors_retriever = sensors.get_available_sensors()
     for sensor in sensors_list:
-        if sensor == "picamera":
-            sensors.append(get_camera_sensor())
-        elif sensor == "sensehat":
-            sensors.append(get_sense_hat_sensor())
+        sensors.append(all_sensors_retriever[sensor]())
 
     return sensors
 
