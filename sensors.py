@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
+import configmanager
 
 class ISensor(object):
     __metaclass__ = ABCMeta
@@ -16,10 +16,11 @@ def _get_picamera_sensor():
 
 def _get_sense_hat_sensor():
     from sensehatsensor import SenseHatSensor
-    return SenseHatSensor()
+    active_sensors = configmanager.config["sensehat"]["active_sensors"].split(",")
+    return SenseHatSensor(active_sensors)
 
 
-def get_available_sensors():
+def get_sensor_generators():
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
