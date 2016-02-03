@@ -1,5 +1,6 @@
 from time import sleep
 from enum import Enum
+from piguardsystem import Mode
 import queue
 import threading
 import factory
@@ -21,8 +22,9 @@ class BaseQueuedThread(threading.Thread):
 
 class StatusHandlerThread(BaseQueuedThread):
 
-    def __init__(self, shared_queue):
+    def __init__(self, shared_queue, mode=Mode.monitoring):
         BaseQueuedThread.__init__(self, shared_queue)
+        self.mode = mode
         self._handler = factory.get_status_handler()
         self._sampling_frequence = factory.get_sampling_interval()
 
@@ -31,7 +33,7 @@ class StatusHandlerThread(BaseQueuedThread):
         while self._continue:
             try:
                 status = self._queue.get(timeout=queue_timeout)
-                self._handler.manage_status(status)
+                self._handler.manage_status(status, self.mode)
                 self._queue.task_done()
             except queue.Empty:
                 print("Status handler timeout!")
@@ -88,13 +90,12 @@ class System(object):
         started = "started"
         stopped = "stopped"
 
-
     def __init__(self):
-
         self.system_status = System.SystemStatus.stopped
+        self.mode = Mode.monitoring
 
         self._statuses_queue = queue.Queue()
-        self._handler_thread = StatusHandlerThread(self._statuses_queue)
+        self._handler_thread = StatusHandlerThread(self._statuses_queue, self.mode)
         self._generator_thread = StatusGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
@@ -124,10 +125,26 @@ class System(object):
             self.stop()
             self.send_message("Goodbye and thank you for using PiGuard!")
             keep_running = False
+        elif command == "monitor":
+            if self.mode == Mode.monitoring:
+                self.send_message("Monitoring mode already active!")
+            else:
+                self.mode = Mode.monitoring
+                self._handler_thread.mode = self.mode
+                self.send_message("Monitoring mode activated!")
+        elif command == "surveil":
+            if self.mode == Mode.surveillance:
+                self.send_message("Surveillance mode already active!")
+            else:
+                self.mode = Mode.surveillance
+                self._handler_thread.mode = self.mode
+                self.send_message("Surveillance mode activated!")
         elif command == "help":
             self.send_message("PiGuard available commands:")
             self.send_message("\tstart: starts the processes status generator and the status handler")
             self.send_message("\tstop: stops the processes status generator and the status handler")
+            self.send_message("\tmonitor: start monitoring mode")
+            self.send_message("\tsurveil: start surveillance mode")
             self.send_message("\tshutdown: stops all the processes and terminates the application")
             self.send_message("\texit: terminate the console session")
             self.send_message("\thelp: display this command")

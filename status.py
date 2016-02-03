@@ -33,9 +33,9 @@ class StatusHandler(object):
         self._actions = actions
         self._actions_per_event = actions_per_event
         
-    def manage_status(self, status):
+    def manage_status(self, status, mode):
         events = self._analyze(status)
-        actions = self._prepare_actions(events)
+        actions = self._prepare_actions(events, mode)
         self._process_actions(actions, status)
     
     def _analyze(self, status):
@@ -47,10 +47,10 @@ class StatusHandler(object):
         events.append(Event.empty)
         return events
     
-    def _prepare_actions(self, events):
-        action_types = {}
+    def _prepare_actions(self, events, mode):
+        action_types = dict()
         for event in events:
-            actions_per_event = self._actions_per_event[event]
+            actions_per_event = self._actions_per_event[mode][event]
             for action_type in actions_per_event:
                 if action_type in action_types:
                     action_types[action_type].append(event)

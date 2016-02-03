@@ -4,6 +4,7 @@ from motiondetector import MotionDetector
 from status import Event, ActionType, StatusHandler, StatusGenerator
 from console import ConsoleServer, CommandHandler
 from restservice import RestServer, RestRequestHandler
+from piguardsystem import Mode
 import os
 import configmanager
 import sensors
@@ -65,8 +66,14 @@ def get_actions():
 
 def get_actions_per_event():
     ea = dict()
-    ea[Event.empty] = [ActionType.uploadStatus]
-    ea[Event.motionDetected] = [ActionType.sendMail, ActionType.uploadStatus]
+    ea[Mode.surveillance] = dict()
+    ea[Mode.surveillance][Event.empty] = [ActionType.uploadStatus]
+    ea[Mode.surveillance][Event.motionDetected] = [ActionType.sendMail, ActionType.uploadStatus]
+
+    ea[Mode.monitoring] = dict()
+    ea[Mode.monitoring][Event.empty] = [ActionType.uploadStatus]
+    ea[Mode.monitoring][Event.motionDetected] = list()
+
     return ea
 
 
