@@ -121,6 +121,7 @@ class System(object):
             self.system_status = System.SystemStatus.started
         elif command == "status":
             self.send_message("PiGuard status: " + self.system_status.value)
+            self.send_message("PiGuard mode: " + self.mode.value)
         elif command == "shutdown":
             self.stop()
             self.send_message("Goodbye and thank you for using PiGuard!")
