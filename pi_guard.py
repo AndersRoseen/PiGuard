@@ -1,6 +1,7 @@
 from time import sleep
 from enum import Enum
 from piguardsystem import Mode
+from status import ActionType
 import queue
 import threading
 import factory
@@ -22,10 +23,10 @@ class BaseQueuedThread(threading.Thread):
 
 class StatusHandlerThread(BaseQueuedThread):
 
-    def __init__(self, shared_queue, mode=Mode.monitoring):
+    def __init__(self, shared_queue, action_queue, mode=Mode.monitoring):
         BaseQueuedThread.__init__(self, shared_queue)
         self.mode = mode
-        self._handler = factory.get_status_handler()
+        self._handler = factory.get_status_handler(action_queue)
         self._sampling_frequence = factory.get_sampling_interval()
 
     def run(self):
@@ -95,7 +96,8 @@ class System(object):
         self.mode = Mode.monitoring
 
         self._statuses_queue = queue.Queue()
-        self._handler_thread = StatusHandlerThread(self._statuses_queue, self.mode)
+        self._on_demand_actions_queue = queue.Queue()
+        self._handler_thread = StatusHandlerThread(self._statuses_queue, self._on_demand_actions_queue, self.mode)
         self._generator_thread = StatusGeneratorThread(self._statuses_queue)
 
         self._commands_queue = queue.Queue()
@@ -140,12 +142,16 @@ class System(object):
                 self.mode = Mode.surveillance
                 self._handler_thread.mode = self.mode
                 self.send_message("Surveillance mode activated!")
+        elif command == "snapshot":
+            self._on_demand_actions_queue.put(ActionType.uploadStatus)
+            self.send_message("Snapshot request queued!")
         elif command == "help":
             self.send_message("PiGuard available commands:")
             self.send_message("\tstart: starts the processes status generator and the status handler")
             self.send_message("\tstop: stops the processes status generator and the status handler")
             self.send_message("\tmonitor: start monitoring mode")
             self.send_message("\tsurveil: start surveillance mode")
+            self.send_message("\tsnapshot: upload next status!")
             self.send_message("\tshutdown: stops all the processes and terminates the application")
             self.send_message("\texit: terminate the console session")
             self.send_message("\thelp: display this command")

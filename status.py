@@ -1,11 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from queue import Empty
 import datetime
 
 
 class Event(Enum):
     empty = "empty"
     motionDetected = "motionDetected"
+    onDemandRequest = "onDemandRequest"
 
 
 class StatusGenerator(object):
@@ -28,10 +30,11 @@ class StatusGenerator(object):
 
 class StatusHandler(object):
     
-    def __init__(self, analyzers, actions, actions_per_event):
+    def __init__(self, analyzers, actions, actions_per_event, action_queue):
         self._analyzers = analyzers
         self._actions = actions
         self._actions_per_event = actions_per_event
+        self._on_demand_actions_queue = action_queue
         
     def manage_status(self, status, mode):
         events = self._analyze(status)
@@ -56,6 +59,13 @@ class StatusHandler(object):
                     action_types[action_type].append(event)
                 else:
                     action_types[action_type] = [event]
+
+        while True:
+            try:
+                action_type = self._on_demand_actions_queue.get_nowait()
+                action_types[action_type] = [Event.onDemandRequest]
+            except Empty:
+                break
         
         return action_types
     

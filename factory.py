@@ -77,12 +77,12 @@ def get_actions_per_event():
     return ea
 
 
-def get_status_handler():
+def get_status_handler(action_queue):
     analyzers = get_status_analyzers()
     actions = get_actions()
     actions_per_event = get_actions_per_event()
     
-    return StatusHandler(analyzers, actions, actions_per_event)
+    return StatusHandler(analyzers, actions, actions_per_event, action_queue)
 
 
 def get_status_generator():

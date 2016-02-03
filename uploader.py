@@ -29,7 +29,7 @@ def prepare_json_status(status, events):
 
 def should_force(events):
     for event in events:
-        if event is Event.motionDetected:
+        if event is Event.motionDetected or event is Event.onDemandRequest:
             return True
     return False
 
