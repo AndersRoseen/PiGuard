@@ -3,7 +3,8 @@ from PIL import ImageChops
 from functools import reduce
 import math 
 import operator
-from status import IStatusAnalyzer, Event
+from analyzers import IStatusAnalyzer
+from actions import Event
 
 
 def img_diff(im1, im2):

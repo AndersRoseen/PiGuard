@@ -5,7 +5,7 @@ import json
 import storagemanager
 import configmanager
 
-from status import IAction, Event
+from actions import IAction, Event
 
 
 def _get_file_name(time):

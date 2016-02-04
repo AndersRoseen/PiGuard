@@ -1,6 +1,5 @@
 from enum import Enum
 from abc import ABCMeta, abstractmethod
-from piguardsystem import Mode
 
 
 class Event(Enum):
@@ -33,6 +32,7 @@ def get_actions():
 
 
 def get_actions_per_event():
+    from piguardsystem import Mode
     ea = dict()
     ea[Mode.surveillance] = dict()
     ea[Mode.surveillance][Event.empty] = [ActionType.uploadStatus]
