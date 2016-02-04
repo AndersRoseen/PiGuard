@@ -36,38 +36,34 @@ class StatusHandler(object):
         self._process_actions(actions_list, status)
     
     def _analyze(self, status):
-        events = []
+        events = list()
         for analyzer in self._analyzers:
             curr_events = analyzer.analyze_status(status)
             events.extend(curr_events)
         
-        events.append(actions.Event.empty)
         return events
     
     def _prepare_actions(self, events, mode):
-        action_types = dict()
+        action_types = set()
         for event in events:
             actions_per_event = self._actions_per_event[mode][event]
             for action_type in actions_per_event:
-                if action_type in action_types:
-                    action_types[action_type].append(event)
-                else:
-                    action_types[action_type] = [event]
+                action_types.add(action_type)
 
         while True:
             try:
                 action_type = self._on_demand_actions_queue.get_nowait()
-                action_types[action_type] = [actions.Event.onDemandRequest]
+                action_types.add(action_type)
             except Empty:
                 break
         
         return action_types
     
     def _process_actions(self, actions_list, status):
-        for action_type, events in actions_list.items():
+        for action_type in actions_list:
             action = self._actions[action_type]
             try:
-                action.perform_action(status, events)
+                action.perform_action(status)
             except:
                 print("Issue while performing ", action_type)
 

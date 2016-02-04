@@ -17,7 +17,7 @@ class IAction(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def perform_action(self, status, events):
+    def perform_action(self, status):
         pass
 
 

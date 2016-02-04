@@ -95,6 +95,20 @@ class RestServiceThread(BaseThread):
         print("REST server stopped!")
 
 
+class SystemActionsGenerator(threading.Thread):
+
+    def __init__(self, actions_queue):
+        super().__init__()
+        self.daemon = True
+        self._actions_queue = actions_queue
+        self._data_update_interval = configmanager.config.getint('general', 'data_update_interval') * 60
+
+    def run(self):
+        while True:
+            self._actions_queue.put(ActionType.uploadStatus)
+            sleep(self._data_update_interval)
+
+
 class System(object):
 
     class SystemStatus(Enum):
@@ -116,6 +130,9 @@ class System(object):
         self._console_thread.start()
         self.rest_service_thread = RestServiceThread(self._commands_queue)
         self.rest_service_thread.start()
+
+        actions_generator = SystemActionsGenerator(self._on_demand_actions_queue)
+        actions_generator.start()
 
     def get_and_execute_command(self):
         command, messages_queue = self._commands_queue.get()
@@ -216,6 +233,6 @@ class System(object):
             self.send_message("Status generator stopped!")
         self.send_message("PiGuard successfully stopped")
 
-    def shutdown_console_server(self):
+    def shutdown_servers(self):
         self._console_thread.server.shutdown()
         self.rest_service_thread.server.shutdown()

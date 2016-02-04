@@ -5,14 +5,14 @@ import json
 import storagemanager
 import configmanager
 
-from actions import IAction, Event
+from actions import IAction
 
 
 def _get_file_name(time):
         return "pic_%02d%02d%d_%02d%02d%02d.jpg" % (time.day, time.month, time.year, time.hour, time.minute, time.second)
 
 
-def _prepare_json_status(status, events):
+def _prepare_json_status(status):
     json_status = dict()
 
     for item in status.items():
@@ -24,15 +24,7 @@ def _prepare_json_status(status, events):
 
         json_status[key] = value
 
-    json_status["events"] = list(map(str, events))
     return json_status
-
-
-def _should_force(events):
-    for event in events:
-        if event is Event.motionDetected or event is Event.onDemandRequest:
-            return True
-    return False
 
 
 class DropboxUploader(IAction):
@@ -87,18 +79,14 @@ class DropboxUploader(IAction):
             print('Dropbox API error: ', err)
             return False
 
-    def upload_status(self, status, events):
-        now = datetime.datetime.now()
-        force = _should_force(events)
-        if force or (now - self._last_upload).seconds > self._upload_interval:
-            json_status = _prepare_json_status(status, events)
-            statuses = self.get_statuses_list()
-            statuses["statuses"].insert(0, json_status)
-            success = self.upload_statuses_list(statuses)
-            picture = status["picture"]
-            success = success and self.upload_file_stream(picture, json_status["picture"], force)
-            if success:
-                self._last_upload = now
+    def upload_status(self, status):
+        json_status = _prepare_json_status(status)
+        statuses = self.get_statuses_list()
+        statuses["statuses"].insert(0, json_status)
+        self.upload_statuses_list(statuses)
+        picture = status["picture"]
+        self.upload_file_stream(picture, json_status["picture"])
+
 
     def get_statuses_list(self):
         try:
@@ -110,27 +98,20 @@ class DropboxUploader(IAction):
             print('Status list file not found or impossible to download... creating a new one!')
             return {"statuses": list()}
 
-    def perform_action(self, status, events):
-        self.upload_status(status, events)
+    def perform_action(self, status):
+        self.upload_status(status)
 
 
 class DiskSaver(IAction):
 
-    def __init__(self, upload_interval=1):
-        self._last_upload = datetime.datetime.now()
-        self._upload_interval = upload_interval * 60
+    def perform_action(self, status):
+        json_status = _prepare_json_status(status)
+        print("Saving status on disk!")
+        storagemanager.manager.add_status(json_status)
+        print("Saving picture on disk!")
+        picture = status["picture"]
+        storagemanager.manager.save_image(picture, json_status["picture"])
 
-    def perform_action(self, status, events):
-        now = datetime.datetime.now()
-        force = _should_force(events)
-        if force or (now - self._last_upload).seconds > self._upload_interval:
-            json_status = _prepare_json_status(status, events)
-            print("Saving status on disk!")
-            storagemanager.manager.add_status(json_status)
-            print("Saving picture on disk!")
-            picture = status["picture"]
-            storagemanager.manager.save_image(picture, json_status["picture"])
-            self._last_upload = now
 
 
 def get_uploader():
@@ -142,4 +123,4 @@ def get_uploader():
     #    with open('piguard.ini', 'w') as configfile:
     #        config.write(configfile)
     # return DropboxUploader(token, config.getint('general', 'data_update_interval'))
-    return DiskSaver(configmanager.config.getint('general', 'data_update_interval'))
+    return DiskSaver()

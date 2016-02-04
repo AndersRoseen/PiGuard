@@ -20,7 +20,7 @@ class MailSender(IAction):
 
     def _send_mail(self, file_stream):
         now = datetime.datetime.now()
-        if (now - self._last_sent_mail_date).seconds < 60:
+        if (now - self._last_sent_mail_date).seconds < 120:
             return
     
         msg = MIMEMultipart()
@@ -45,7 +45,7 @@ class MailSender(IAction):
     
         self._last_sent_mail_date = now
 
-    def perform_action(self, status, events):
+    def perform_action(self, status):
         picture = status["picture"]
         self._send_mail(picture)
 

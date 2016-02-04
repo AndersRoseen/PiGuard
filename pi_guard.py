@@ -7,5 +7,5 @@ if __name__ == "__main__":
     while system.get_and_execute_command():
         pass
 
-    system.shutdown_console_server()
+    system.shutdown_servers()
     print("PiGuard Terminated")

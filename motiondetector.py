@@ -1,4 +1,3 @@
-from camerasensor import CameraSensor
 from PIL import ImageChops
 from functools import reduce
 import math 
@@ -42,5 +41,8 @@ class MotionDetector(IStatusAnalyzer):
     def analyze_status(self, status):
         picture = status["picture"]
         if self._detect_motion(picture):
+            status["motion"] = True
             return [Event.motionDetected]
+        else:
+            status["motion"] = False
         return []
