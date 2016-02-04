@@ -185,7 +185,7 @@ class System(object):
         self.send_message("Starting PiGuard...")
         if not self._handler_thread.is_alive():
             if self._handler_thread.is_stopped():
-                self._handler_thread = StatusHandlerThread(self._statuses_queue, self._on_demand_actions_queue)
+                self._handler_thread = StatusHandlerThread(self._statuses_queue, self._on_demand_actions_queue, self.mode)
                 self.send_message("Status handler initialized!")
 
             self._handler_thread.start()
