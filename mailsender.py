@@ -1,10 +1,9 @@
 import datetime
-
 import smtplib
+import configmanager
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
-
 from status import IAction
 
 
@@ -49,3 +48,13 @@ class MailSender(IAction):
     def perform_action(self, status, events):
         picture = status["picture"]
         self._send_mail(picture)
+
+
+def get_mail_sender():
+    user = configmanager.config['mail']['user_id']
+    passw = configmanager.config['mail']['pass']
+    server = configmanager.config['mail']['smtp_server']
+    port = configmanager.config['mail']['smtp_port']
+    mfrom = configmanager.config['mail']['from']
+    mto = configmanager.config['mail']['to']
+    return MailSender(user, passw, server, port, mfrom, mto)

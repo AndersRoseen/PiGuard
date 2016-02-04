@@ -1,7 +1,7 @@
 import socketserver
 import queue
 import authmanager
-
+import os
 
 class CommandHandler(socketserver.StreamRequestHandler):
 
@@ -49,5 +49,13 @@ class ConsoleServer(socketserver.TCPServer):
         self.commands = commands_queue
 
 
+def get_ip_address():
+    with os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1') as f:
+        return f.read()
+
+
+def get_console_server(commands_queue):
+    HOST, PORT = get_ip_address(), 2727
+    return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
 
 

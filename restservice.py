@@ -3,7 +3,9 @@ import json
 import queue
 import storagemanager
 import authmanager
+import configmanager
 import ssl
+import os
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
@@ -94,3 +96,14 @@ class RestServer(HTTPServer):
         self.commands = commands_queue
         self.socket = ssl.wrap_socket(self.socket, keyfile=key_path, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
 
+
+def get_ip_address():
+    with os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1') as f:
+        return f.read()
+
+
+def get_rest_server(commands_queue):
+    certificate_path = configmanager.config["rest_service"]["server_certificate_location"]
+    key_path = configmanager.config["rest_service"]["server_key_location"]
+    HOST, PORT = get_ip_address(), 2728
+    return RestServer((HOST, PORT), RestRequestHandler, commands_queue, key_path, certificate_path)
