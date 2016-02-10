@@ -61,7 +61,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         command_output = list()
         while True:
             message = messages_queue.get()
-            if message == "END":
+            if message == Message.END:
                 break
             command_output.append(message)
 
@@ -115,12 +115,12 @@ def _generate_response(output):
     if Message.status_started in output:
         json_response["response"]["system_status"]["started"] = True
     else:
-        json_response["system_status"]["started"] = False
+        json_response["response"]["system_status"]["started"] = False
 
     if Message.mode_monitoring in output:
-        json_response["system_status"]["mode"] = "monitoring"
+        json_response["response"]["system_status"]["mode"] = "monitoring"
     elif Message.mode_surveillance in output:
-        json_response["system_status"]["mode"] = "surveillance"
+        json_response["response"]["system_status"]["mode"] = "surveillance"
 
     json_response["response"]["system_output"] = list(map(lambda m: m.name, output))
 
