@@ -34,9 +34,9 @@ class CommandHandler(socketserver.StreamRequestHandler):
             
             while True:
                 message = messages_queue.get()
-                if message == "END":
+                if message.value == "END":
                     break
-                self.wfile.write(bytes(message + "\n", "utf-8"))
+                self.wfile.write(bytes(message.value + "\n", "utf-8"))
             
             if "shutdown" == command:
                 break

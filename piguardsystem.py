@@ -2,6 +2,7 @@ from enum import Enum
 from status import StatusGenerator
 from actions import ActionType
 from time import sleep
+from messages import Message
 import sensors
 import configmanager
 import status
@@ -149,43 +150,43 @@ class System(object):
             self.start()
             self.system_status = System.SystemStatus.started
         elif command == "status":
-            self.send_message("PiGuard status: " + self.system_status.value)
-            self.send_message("PiGuard mode: " + self.mode.value)
+            pass
         elif command == "shutdown":
             self.stop()
-            self.send_message("Goodbye and thank you for using PiGuard!")
+            self.send_message(Message.final_goodbye)
             keep_running = False
         elif command == "monitor":
             if self.mode == Mode.monitoring:
-                self.send_message("Monitoring mode already active!")
+                self.send_message(Message.mode_monitoring_already_active)
             else:
                 self.mode = Mode.monitoring
                 self._handler_thread.mode = self.mode
-                self.send_message("Monitoring mode activated!")
+                self.send_message(Message.mode_monitoring_activated)
         elif command == "surveil":
             if self.mode == Mode.surveillance:
-                self.send_message("Surveillance mode already active!")
+                self.send_message(Message.mode_surveillance__already_active)
             else:
                 self.mode = Mode.surveillance
                 self._handler_thread.mode = self.mode
-                self.send_message("Surveillance mode activated!")
+                self.send_message(Message.mode_surveillance_activated)
         elif command == "snapshot":
             self._on_demand_actions_queue.put(ActionType.uploadStatus)
-            self.send_message("Snapshot request queued!")
+            self.send_message(Message.snapshot_requested)
         elif command == "help":
-            self.send_message("PiGuard available commands:")
-            self.send_message("\tstart: starts the processes status generator and the status handler")
-            self.send_message("\tstop: stops the processes status generator and the status handler")
-            self.send_message("\tmonitor: start monitoring mode")
-            self.send_message("\tsurveil: start surveillance mode")
-            self.send_message("\tsnapshot: upload next status!")
-            self.send_message("\tshutdown: stops all the processes and terminates the application")
-            self.send_message("\texit: terminate the console session")
-            self.send_message("\thelp: display this command")
+            self.send_message(Message.help_command_list)
+            self.send_message(Message.help_start)
+            self.send_message(Message.help_stop)
+            self.send_message(Message.help_monitor)
+            self.send_message(Message.help_surveil)
+            self.send_message(Message.help_snapshot)
+            self.send_message(Message.help_shutdown)
+            self.send_message(Message.help_exit)
+            self.send_message(Message.help_help)
         else:
-            self.send_message(command + ": command not found")
+            self.send_message(Message.command_not_found)
 
-        self.send_message("END")
+        self.status()
+        self.send_message(Message.END)
         self._messages_queue = None
 
         return keep_running
@@ -199,40 +200,51 @@ class System(object):
             self._messages_queue.get_nowait()
 
     def start(self):
-        self.send_message("Starting PiGuard...")
+        self.send_message(Message.starting)
         if not self._handler_thread.is_alive():
             if self._handler_thread.is_stopped():
                 self._handler_thread = StatusHandlerThread(self._statuses_queue, self._on_demand_actions_queue, self.mode)
-                self.send_message("Status handler initialized!")
+                self.send_message(Message.status_handler_init)
 
             self._handler_thread.start()
-            self.send_message("Status handler started!")
+            self.send_message(Message.status_handler_start)
         else:
-            self.send_message("Status handler already started!")
+            self.send_message(Message.status_handler_already_started)
 
         if not self._generator_thread.is_alive():
             if self._generator_thread.is_stopped():
                 self._generator_thread = StatusGeneratorThread(self._statuses_queue)
-                self.send_message("Status generator initialized!")
+                self.send_message(Message.status_gen_init)
 
             self._generator_thread.start()
-            self.send_message("Status generator started!")
+            self.send_message(Message.status_gen_start)
         else:
-            self.send_message("Status generator already started!")
+            self.send_message(Message.status_gen_already_started)
 
     def stop(self):
-        self.send_message("Stopping PiGuard...")
+        self.send_message(Message.stopping)
         if self._handler_thread.is_alive():
             self._handler_thread.stop()
             self._handler_thread.join()
-            self.send_message("Status handler stopped!")
+            self.send_message(Message.status_handler_stop)
 
         if self._generator_thread.is_alive():
             self._generator_thread.stop()
             self._generator_thread.join()
-            self.send_message("Status generator stopped!")
-        self.send_message("PiGuard successfully stopped")
+            self.send_message(Message.status_gen_stop)
+        self.send_message(Message.final_stop)
 
     def shutdown_servers(self):
         self._console_thread.server.shutdown()
         self.rest_service_thread.server.shutdown()
+
+    def status(self):
+        if self.system_status == System.SystemStatus.started:
+            self.send_message(Message.status_started)
+        else:
+            self.send_message(Message.status_stopped)
+
+        if self.mode == Mode.monitoring:
+            self.send_message(Message.mode_monitoring)
+        else:
+            self.send_message(Message.mode_surveillance)
