@@ -122,7 +122,7 @@ def _generate_response(output):
     elif Message.mode_surveillance in output:
         json_response["system_status"]["mode"] = "surveillance"
 
-    json_response["response"]["system_output"] = list(map(lambda m: m.value, output))
+    json_response["response"]["system_output"] = list(map(lambda m: m.name, output))
 
     return json_response
 
