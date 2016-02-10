@@ -12,7 +12,7 @@ class Message(Enum):
     status_handler_stop = "Status handler stopped!"
     status_gen_init = "Status generator initialized!"
     status_gen_start = "Status generator started!"
-    status_gen__already_started = "Status generator already started!"
+    status_gen_already_started = "Status generator already started!"
     status_gen_stop = "Status generator stopped!"
     mode_surveillance = "PiGuard mode: surveillance"
     mode_monitoring = "PiGuard mode: monitoring"
