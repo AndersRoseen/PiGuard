@@ -1,4 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from messages import Message
 import json
 import queue
 import storagemanager
@@ -64,9 +65,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
                 break
             command_output.append(message)
 
-        json_response = dict()
-        json_response["command_execution"] = "completed"
-        json_response["command_output"] = command_output
+        json_response = _generate_response(command_output)
 
         self.do_OK_HEAD("application/json")
         self.wfile.write(bytes(json.dumps(json_response), "utf-8"))
@@ -107,3 +106,23 @@ def get_rest_server(commands_queue):
     key_path = configmanager.config["rest_service"]["server_key_location"]
     HOST, PORT = get_ip_address(), 2728
     return RestServer((HOST, PORT), RestRequestHandler, commands_queue, key_path, certificate_path)
+
+
+def _generate_response(output):
+    json_response = dict()
+    json_response["response"] = dict()
+    json_response["response"]["system_status"] = dict()
+    if Message.status_started in output:
+        json_response["response"]["system_status"]["started"] = True
+    else:
+        json_response["system_status"]["started"] = False
+
+    if Message.mode_monitoring in output:
+        json_response["system_status"]["mode"] = "monitoring"
+    elif Message.mode_surveillance in output:
+        json_response["system_status"]["mode"] = "surveillance"
+
+    json_response["response"]["system_output"] = list(map(lambda m: m.name, output))
+
+    return json_response
+
