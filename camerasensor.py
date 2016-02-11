@@ -6,8 +6,8 @@ from fractions import Fraction
 import configmanager
 
 camera = picamera.PiCamera()
-camera.awb_mode = 'off'
-camera.awb_gains = (Fraction(119, 128), Fraction(631, 256))
+#camera.awb_mode = 'off'
+#camera.awb_gains = (Fraction(119, 128), Fraction(631, 256))
 
 
 def setup_camera():

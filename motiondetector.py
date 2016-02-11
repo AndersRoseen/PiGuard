@@ -39,10 +39,18 @@ class MotionDetector(IStatusAnalyzer):
         return motion_occurred
 
     def analyze_status(self, status):
-        picture = status["picture"]
-        if self._detect_motion(picture):
-            status["motion"] = True
+
+        if "motion" not in status.keys():
+            if "picture" in status.keys():
+                picture = status["picture"]
+                if self._detect_motion(picture):
+                    status["motion"] = True
+                else:
+                    status["motion"] = False
+            else:
+                return []
+
+        if status["motion"]:
             return [Event.motionDetected]
         else:
-            status["motion"] = False
-        return []
+            return []
