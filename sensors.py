@@ -21,10 +21,16 @@ def _get_sense_hat_sensor():
     return SenseHatSensor(active_sensors)
 
 
+def _get_pir_sensor():
+    from pirsensor import PIRSensor
+    return PIRSensor(26)
+
+
 def _get_sensor_generators():
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
+    sensors["pir"] = _get_pir_sensor
     return sensors
 
 
