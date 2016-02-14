@@ -17,11 +17,11 @@ class IAction(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def perform_action(self, status):
+    def perform_action(self, status: dict):
         pass
 
 
-def get_actions():
+def get_actions() -> list:
     import mailsender
     import uploader
 
@@ -31,7 +31,7 @@ def get_actions():
     return actions
 
 
-def get_actions_per_event():
+def get_actions_per_event() -> dict:
     from piguardsystem import Mode
     ea = dict()
     ea[Mode.surveillance] = dict()

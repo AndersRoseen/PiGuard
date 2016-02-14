@@ -7,10 +7,10 @@ sense_hat = SenseHat()
 
 class SenseHatSensor(ISensor):
 
-    def __init__(self, active_sensors):
+    def __init__(self, active_sensors: list):
         self.sensors = active_sensors
 
-    def update_status(self, status):
+    def update_status(self, status: dict):
         global sense_hat
 
         if "temperature" in self.sensors:

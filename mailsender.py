@@ -1,6 +1,7 @@
 import datetime
 import smtplib
 import configmanager
+from imagestream import ImageStream
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -9,7 +10,7 @@ from actions import IAction
 
 class MailSender(IAction):
     
-    def __init__(self, user, passw, smtp_addr, smtp_port, mail_to, mail_from):
+    def __init__(self, user: str, passw: str, smtp_addr: str, smtp_port: str, mail_to: str, mail_from: str):
         self._last_sent_mail_date = datetime.datetime.now()
         self._user_id = user
         self._pass = passw
@@ -18,7 +19,7 @@ class MailSender(IAction):
         self._to = mail_to
         self._from = mail_from
 
-    def _send_mail(self, file_stream):
+    def _send_mail(self, file_stream: ImageStream):
         now = datetime.datetime.now()
         if (now - self._last_sent_mail_date).seconds < 120:
             return
@@ -45,12 +46,12 @@ class MailSender(IAction):
     
         self._last_sent_mail_date = now
 
-    def perform_action(self, status):
+    def perform_action(self, status: dict):
         picture = status["picture"]
         self._send_mail(picture)
 
 
-def get_mail_sender():
+def get_mail_sender() -> MailSender:
     user = configmanager.config['mail']['user_id']
     passw = configmanager.config['mail']['pass']
     server = configmanager.config['mail']['smtp_server']

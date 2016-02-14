@@ -44,17 +44,17 @@ class CommandHandler(socketserver.StreamRequestHandler):
 
 class ConsoleServer(socketserver.TCPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue):
+    def __init__(self, server_address: tuple, RequestHandlerClass, commands_queue: queue.Queue):
         socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
 
 
-def get_ip_address():
+def get_ip_address() -> str:
     with os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1') as f:
         return f.read()
 
 
-def get_console_server(commands_queue):
+def get_console_server(commands_queue: queue.Queue) -> ConsoleServer:
     HOST, PORT = get_ip_address(), 2727
     return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
 

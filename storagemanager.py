@@ -1,3 +1,4 @@
+from imagestream import ImageStream
 import threading
 import json
 import os
@@ -8,7 +9,7 @@ import configmanager
 
 class StorageManager(object):
 
-    def __init__(self, statuses_path, images_path):
+    def __init__(self, statuses_path: str, images_path: str):
         file_name = "statuses.json"
         full_path = statuses_path + file_name
         if not os.path.exists(statuses_path):
@@ -26,17 +27,17 @@ class StorageManager(object):
         self._semaphore = threading.BoundedSemaphore()
         self._last_update = datetime.datetime.now()
 
-    def add_status(self, status):
+    def add_status(self, status: dict):
         with self._semaphore:
             statuses = self._unsafe_get_statuses()
             statuses["statuses"].insert(0, status)
             self._unsafe_save_statuses(statuses)
 
-    def get_statuses(self):
+    def get_statuses(self) -> dict:
         with self._semaphore:
             return self._unsafe_get_statuses()
 
-    def _unsafe_get_statuses(self):
+    def _unsafe_get_statuses(self) -> dict:
         statuses_file = open(self.file_path, "r")
         statuses_list = json.load(statuses_file)
         statuses_file.close()
@@ -47,11 +48,11 @@ class StorageManager(object):
             with open(self.file_path, "rb") as statuses_file:
                 stream.write(statuses_file.read())
 
-    def save_statuses(self, statuses):
+    def save_statuses(self, statuses: dict):
         with self._semaphore:
             self._unsafe_save_statuses(statuses)
 
-    def _unsafe_save_statuses(self, statuses):
+    def _unsafe_save_statuses(self, statuses: dict):
         with open(self.file_path, "w") as statuses_file:
             json.dump(statuses, statuses_file)
             self._last_update = datetime.datetime.now()
@@ -87,10 +88,10 @@ class StorageManager(object):
         else:
             self.save_statuses(statuses)
 
-    def save_image(self, image_stream, image_name):
+    def save_image(self, image_stream: ImageStream, image_name: str):
         image_stream.get_image().save(self.pictures_dir + image_name)
 
-    def write_image_on_stream(self, image_name, stream):
+    def write_image_on_stream(self, image_name: str, stream):
         with open(self.pictures_dir + image_name, 'rb') as image_file:
             stream.write(image_file.read())
 

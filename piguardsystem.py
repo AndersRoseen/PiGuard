@@ -1,4 +1,4 @@
-from enum import Enum
+from systemstatus import SystemStatus, Mode
 from status import StatusGenerator
 from actions import ActionType
 from time import sleep
@@ -10,11 +10,6 @@ import console
 import restservice
 import threading
 import queue
-
-
-class Mode(Enum):
-    monitoring = "monitoring"
-    surveillance = "surveillance"
 
 
 class BaseThread(threading.Thread):
@@ -32,7 +27,7 @@ class BaseThread(threading.Thread):
 
 class StatusGeneratorThread(BaseThread):
 
-    def __init__(self, statuses_queue):
+    def __init__(self, statuses_queue: queue.Queue):
         BaseThread.__init__(self)
         self._statuses_queue = statuses_queue
         self._generator = StatusGenerator(sensors.get_sensors())
@@ -52,7 +47,7 @@ class StatusGeneratorThread(BaseThread):
 
 class StatusHandlerThread(BaseThread):
 
-    def __init__(self, statuses_queue, action_queue, mode=Mode.monitoring):
+    def __init__(self, statuses_queue: queue.Queue, action_queue: queue.Queue, mode: Mode = Mode.monitoring):
         BaseThread.__init__(self)
         self.mode = mode
         self._statuses_queue = statuses_queue
@@ -76,7 +71,7 @@ class StatusHandlerThread(BaseThread):
 
 class CommandConsoleThread(BaseThread):
 
-    def __init__(self, shared_queue):
+    def __init__(self, shared_queue: queue.Queue):
         BaseThread.__init__(self)
         self.server = console.get_console_server(shared_queue)
 
@@ -87,7 +82,7 @@ class CommandConsoleThread(BaseThread):
 
 class RestServiceThread(BaseThread):
 
-    def __init__(self, shared_queue):
+    def __init__(self, shared_queue: queue.Queue):
         BaseThread.__init__(self)
         self.server = restservice.get_rest_server(shared_queue)
 
@@ -98,7 +93,7 @@ class RestServiceThread(BaseThread):
 
 class SystemActionsGenerator(threading.Thread):
 
-    def __init__(self, actions_queue):
+    def __init__(self, actions_queue: queue.Queue):
         super().__init__()
         self.daemon = True
         self._actions_queue = actions_queue
@@ -112,12 +107,8 @@ class SystemActionsGenerator(threading.Thread):
 
 class System(object):
 
-    class SystemStatus(Enum):
-        started = "started"
-        stopped = "stopped"
-
     def __init__(self):
-        self.system_status = System.SystemStatus.stopped
+        self.system_status = SystemStatus.stopped
         self.mode = Mode.monitoring
 
         self._statuses_queue = queue.Queue()
@@ -139,16 +130,16 @@ class System(object):
         command, messages_queue = self._commands_queue.get()
         return self._execute_command(command, messages_queue)
 
-    def _execute_command(self, command, messages_queue):
+    def _execute_command(self, command: str, messages_queue: queue.Queue):
         keep_running = True
         self._messages_queue = messages_queue
 
         if command == "stop":
             self.stop()
-            self.system_status = System.SystemStatus.stopped
+            self.system_status = SystemStatus.stopped
         elif command == "start":
             self.start()
-            self.system_status = System.SystemStatus.started
+            self.system_status = SystemStatus.started
         elif command == "status":
             pass
         elif command == "shutdown":
@@ -191,7 +182,7 @@ class System(object):
 
         return keep_running
 
-    def send_message(self, mess):
+    def send_message(self, mess: Message):
         if self._messages_queue is not None:
             self._messages_queue.put(mess)
 
@@ -239,7 +230,7 @@ class System(object):
         self.rest_service_thread.server.shutdown()
 
     def status(self):
-        if self.system_status == System.SystemStatus.started:
+        if self.system_status == SystemStatus.started:
             self.send_message(Message.status_started)
         else:
             self.send_message(Message.status_stopped)

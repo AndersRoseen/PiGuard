@@ -27,7 +27,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         else:
             self.do_AUTH()
 
-    def decode_request(self):
+    def decode_request(self) -> (str, str):
         request_path = self.path[1:]
         if "/" in request_path:
             api_type = request_path[:request_path.index("/", 1)]
@@ -36,7 +36,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         else:
             return request_path, None
 
-    def verify_authentication(self):
+    def verify_authentication(self) -> bool:
         if self.headers['Authorization'] is not None and authmanager.manager.authenticate(self.headers["Authorization"][6:]):
             return True
         else:
@@ -49,12 +49,12 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes("Authentication failed!", "UTF-8"))
 
-    def do_OK_HEAD(self, content_type):
+    def do_OK_HEAD(self, content_type: str):
         self.send_response(200)
         self.send_header("Content-type", content_type)
         self.end_headers()
 
-    def execute_command(self, command):
+    def execute_command(self, command: str):
         messages_queue = queue.Queue()
         self.server.commands.put((command, messages_queue))
 
@@ -70,7 +70,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         self.do_OK_HEAD("application/json")
         self.wfile.write(bytes(json.dumps(json_response), "utf-8"))
 
-    def retrieve_image(self, image_name):
+    def retrieve_image(self, image_name: str):
         try:
             if image_name.endswith(".jpg"):
                 self.do_OK_HEAD("image/jpeg")
@@ -90,25 +90,25 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
 class RestServer(HTTPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue, key_path, certificate_path):
+    def __init__(self, server_address: tuple, RequestHandlerClass, commands_queue: queue.Queue, key_path: str, certificate_path: str):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
         self.socket = ssl.wrap_socket(self.socket, keyfile=key_path, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
 
 
-def get_ip_address():
+def get_ip_address() -> str:
     with os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1') as f:
         return f.read()
 
 
-def get_rest_server(commands_queue):
+def get_rest_server(commands_queue: queue.Queue) -> RestServer:
     certificate_path = configmanager.config["rest_service"]["server_certificate_location"]
     key_path = configmanager.config["rest_service"]["server_key_location"]
     HOST, PORT = get_ip_address(), 2728
     return RestServer((HOST, PORT), RestRequestHandler, commands_queue, key_path, certificate_path)
 
 
-def _generate_response(output):
+def _generate_response(output: list) -> dict:
     json_response = dict()
     json_response["response"] = dict()
     json_response["response"]["system_status"] = dict()

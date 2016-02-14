@@ -22,11 +22,11 @@ class CameraSensor(ISensor):
     def __init__(self):
         setup_camera()
     
-    def capture_picture(self):
+    def capture_picture(self) -> ImageStream:
         global camera
         stream = io.BytesIO()
         camera.capture(stream, format='jpeg')
         return ImageStream(stream)
         
-    def update_status(self, status):
+    def update_status(self, status: dict):
         status["picture"] = self.capture_picture()

@@ -1,20 +1,22 @@
 from queue import Empty
+from systemstatus import Mode
 import actions
 import analyzers
 import datetime
+import queue
 
 
 class StatusGenerator(object):
     
-    def __init__(self, sensors_list):
+    def __init__(self, sensors_list: list):
         self._sensors = sensors_list
 
-    def _new_status(self):
+    def _new_status(self) -> dict:
         status = dict()
         status["timestamp"] = datetime.datetime.now()
         return status
     
-    def get_current_status(self):
+    def get_current_status(self) -> dict:
         status = self._new_status()
         for sensor in self._sensors:
             sensor.update_status(status)
@@ -24,18 +26,18 @@ class StatusGenerator(object):
 
 class StatusHandler(object):
     
-    def __init__(self, analyzers_list, actions_list, actions_per_event, action_queue):
+    def __init__(self, analyzers_list: list, actions_list: list, actions_per_event: dict, action_queue: queue.Queue):
         self._analyzers = analyzers_list
         self._actions = actions_list
         self._actions_per_event = actions_per_event
         self._on_demand_actions_queue = action_queue
         
-    def manage_status(self, status, mode):
+    def manage_status(self, status: dict, mode: Mode):
         events = self._analyze(status)
         actions_list = self._prepare_actions(events, mode)
         self._process_actions(actions_list, status)
     
-    def _analyze(self, status):
+    def _analyze(self, status: dict):
         events = list()
         for analyzer in self._analyzers:
             curr_events = analyzer.analyze_status(status)
@@ -43,7 +45,7 @@ class StatusHandler(object):
         
         return events
     
-    def _prepare_actions(self, events, mode):
+    def _prepare_actions(self, events: list, mode: Mode):
         action_types = set()
         for event in events:
             actions_per_event = self._actions_per_event[mode][event]
@@ -59,7 +61,7 @@ class StatusHandler(object):
         
         return action_types
     
-    def _process_actions(self, actions_list, status):
+    def _process_actions(self, actions_list: list, status: dict):
         for action_type in actions_list:
             action = self._actions[action_type]
             try:
@@ -68,7 +70,7 @@ class StatusHandler(object):
                 print("Issue while performing ", action_type)
 
 
-def get_status_handler(action_queue):
+def get_status_handler(action_queue: queue.Queue) -> StatusHandler:
     analyzers_list = analyzers.get_status_analyzers()
     actions_list = actions.get_actions()
     actions_per_event = actions.get_actions_per_event()

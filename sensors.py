@@ -6,28 +6,28 @@ class ISensor(object):
     __metaclass__ = ABCMeta
     
     @abstractmethod
-    def update_status(self, status):
+    def update_status(self, status: dict):
         pass
 
 
-def _get_picamera_sensor():
+def _get_picamera_sensor() -> ISensor:
     from camerasensor import CameraSensor
     return CameraSensor()
 
 
-def _get_sense_hat_sensor():
+def _get_sense_hat_sensor() -> ISensor:
     from sensehatsensor import SenseHatSensor
     active_sensors = configmanager.config["sensehat"]["active_sensors"].split(",")
     return SenseHatSensor(active_sensors)
 
 
-def _get_pir_sensor():
+def _get_pir_sensor() -> ISensor:
     from pirsensor import PIRSensor
     pin = configmanager.config.getint("pir", "gpio_pin")
     return PIRSensor(pin)
 
 
-def _get_sensor_generators():
+def _get_sensor_generators() -> dict:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
@@ -35,7 +35,7 @@ def _get_sensor_generators():
     return sensors
 
 
-def get_sensors():
+def get_sensors() -> list:
     sensors_list = list()
 
     sensors_to_use = configmanager.config["sensors"]["sensors_list"].split(",")
