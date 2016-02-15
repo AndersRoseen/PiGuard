@@ -5,6 +5,7 @@ import operator
 from analyzers import IStatusAnalyzer
 from actions import Event
 from imagestream import ImageStream
+from piguardtyping import Status
 
 
 def img_diff(im1: Image, im2: Image):
@@ -39,7 +40,7 @@ class MotionDetector(IStatusAnalyzer):
         
         return motion_occurred
 
-    def analyze_status(self, status: dict) -> list:
+    def analyze_status(self, status: Status) -> [Event]:
 
         if "motion" not in status.keys():
             if "picture" in status.keys():

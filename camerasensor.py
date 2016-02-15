@@ -2,8 +2,9 @@ import picamera
 import io
 from imagestream import ImageStream
 from sensors import ISensor
-from fractions import Fraction
 import configmanager
+from piguardtyping import Status
+
 
 camera = picamera.PiCamera()
 #camera.awb_mode = 'off'
@@ -28,5 +29,5 @@ class CameraSensor(ISensor):
         camera.capture(stream, format='jpeg')
         return ImageStream(stream)
         
-    def update_status(self, status: dict):
+    def update_status(self, status: Status):
         status["picture"] = self.capture_picture()

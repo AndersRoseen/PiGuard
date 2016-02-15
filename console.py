@@ -3,6 +3,7 @@ import queue
 import authmanager
 import os
 
+
 class CommandHandler(socketserver.StreamRequestHandler):
 
     def handle(self):
@@ -44,7 +45,7 @@ class CommandHandler(socketserver.StreamRequestHandler):
 
 class ConsoleServer(socketserver.TCPServer):
 
-    def __init__(self, server_address: tuple, RequestHandlerClass, commands_queue: queue.Queue):
+    def __init__(self, server_address: (str, int), RequestHandlerClass, commands_queue: queue.Queue):
         socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
 

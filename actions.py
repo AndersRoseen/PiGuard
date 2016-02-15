@@ -1,5 +1,8 @@
 from enum import Enum
 from abc import ABCMeta, abstractmethod
+from systemstatus import Mode
+from piguardtyping import Status
+
 
 
 class Event(Enum):
@@ -17,11 +20,11 @@ class IAction(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def perform_action(self, status: dict):
+    def perform_action(self, status: Status):
         pass
 
 
-def get_actions() -> list:
+def get_actions() -> {ActionType: IAction}:
     import mailsender
     import uploader
 
@@ -31,8 +34,7 @@ def get_actions() -> list:
     return actions
 
 
-def get_actions_per_event() -> dict:
-    from piguardsystem import Mode
+def get_actions_per_event() -> {Mode: {Event: ActionType}}:
     ea = dict()
     ea[Mode.surveillance] = dict()
     ea[Mode.surveillance][Event.empty] = [ActionType.uploadStatus]

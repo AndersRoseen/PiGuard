@@ -3,7 +3,8 @@ import datetime
 import os
 import json
 import storagemanager
-
+from typing import BinaryIO
+from piguardtyping import JSON, Status
 from actions import IAction
 
 
@@ -11,7 +12,7 @@ def _get_file_name(time: datetime.datetime):
         return "pic_%02d%02d%d_%02d%02d%02d.jpg" % (time.day, time.month, time.year, time.hour, time.minute, time.second)
 
 
-def _prepare_json_status(status: dict):
+def _prepare_json_status(status: Status) -> JSON:
     json_status = dict()
 
     for item in status.items():
@@ -55,7 +56,7 @@ class DropboxUploader(IAction):
         self._last_upload = datetime.datetime.now()
         self._upload_interval = upload_interval * 60
     
-    def _upload_stream_to_dropbox(self, file_stream, file_name: str) -> bool:
+    def _upload_stream_to_dropbox(self, file_stream: BinaryIO, file_name: str) -> bool:
         dest_path = os.path.join('/', file_name)
         try:
             self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
@@ -64,12 +65,12 @@ class DropboxUploader(IAction):
             print('Dropbox API error: ', err)
             return False
             
-    def upload_file_stream(self, file_stream, file_name: str) -> bool:
+    def upload_file_stream(self, file_stream: BinaryIO, file_name: str) -> bool:
         result = self._upload_stream_to_dropbox(file_stream, file_name)
         print("Picture uploaded on Dropbox!")
         return result
 
-    def upload_statuses_list(self, statuses: dict) -> bool:
+    def upload_statuses_list(self, statuses: JSON) -> bool:
         mode = dropbox.files.WriteMode('overwrite', None)
         try:
             self._dropbox.files_upload(json.dumps(statuses), '/statuses.json', mode=mode)
@@ -78,7 +79,7 @@ class DropboxUploader(IAction):
             print('Dropbox API error: ', err)
             return False
 
-    def upload_status(self, status: dict):
+    def upload_status(self, status: Status):
         json_status = _prepare_json_status(status)
         statuses = self.get_statuses_list()
         statuses["statuses"].insert(0, json_status)
@@ -86,7 +87,7 @@ class DropboxUploader(IAction):
         picture = status["picture"]
         self.upload_file_stream(picture, json_status["picture"])
 
-    def get_statuses_list(self) -> dict:
+    def get_statuses_list(self) -> JSON:
         try:
             _, res = self._dropbox.files_download('/statuses.json')
             data = str(res.content, "utf-8")
@@ -96,13 +97,13 @@ class DropboxUploader(IAction):
             print('Status list file not found or impossible to download... creating a new one!')
             return {"statuses": list()}
 
-    def perform_action(self, status: dict):
+    def perform_action(self, status: Status):
         self.upload_status(status)
 
 
 class DiskSaver(IAction):
 
-    def perform_action(self, status: dict):
+    def perform_action(self, status: Status):
         json_status = _prepare_json_status(status)
         print("Saving status on disk!")
         storagemanager.manager.add_status(json_status)
@@ -112,7 +113,6 @@ class DiskSaver(IAction):
 
 
 def get_uploader():
-    global config
     # token = config['dropbox']['login_token']
     # if len(token) == 0:
     #    token = DropboxUploader.generate_auth_token(config['dropbox']['app_key'], config['dropbox']['app_secret'])

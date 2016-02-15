@@ -1,4 +1,6 @@
 from imagestream import ImageStream
+from typing import BinaryIO
+from piguardtyping import JSON
 import threading
 import json
 import os
@@ -27,32 +29,32 @@ class StorageManager(object):
         self._semaphore = threading.BoundedSemaphore()
         self._last_update = datetime.datetime.now()
 
-    def add_status(self, status: dict):
+    def add_status(self, status: JSON):
         with self._semaphore:
             statuses = self._unsafe_get_statuses()
             statuses["statuses"].insert(0, status)
             self._unsafe_save_statuses(statuses)
 
-    def get_statuses(self) -> dict:
+    def get_statuses(self) -> JSON:
         with self._semaphore:
             return self._unsafe_get_statuses()
 
-    def _unsafe_get_statuses(self) -> dict:
+    def _unsafe_get_statuses(self) -> JSON:
         statuses_file = open(self.file_path, "r")
         statuses_list = json.load(statuses_file)
         statuses_file.close()
         return statuses_list
 
-    def write_statuses_on_stream(self, stream):
+    def write_statuses_on_stream(self, stream: BinaryIO):
         with self._semaphore:
             with open(self.file_path, "rb") as statuses_file:
                 stream.write(statuses_file.read())
 
-    def save_statuses(self, statuses: dict):
+    def save_statuses(self, statuses: JSON):
         with self._semaphore:
             self._unsafe_save_statuses(statuses)
 
-    def _unsafe_save_statuses(self, statuses: dict):
+    def _unsafe_save_statuses(self, statuses: JSON):
         with open(self.file_path, "w") as statuses_file:
             json.dump(statuses, statuses_file)
             self._last_update = datetime.datetime.now()
@@ -91,7 +93,7 @@ class StorageManager(object):
     def save_image(self, image_stream: ImageStream, image_name: str):
         image_stream.get_image().save(self.pictures_dir + image_name)
 
-    def write_image_on_stream(self, image_name: str, stream):
+    def write_image_on_stream(self, image_name: str, stream: BinaryIO):
         with open(self.pictures_dir + image_name, 'rb') as image_file:
             stream.write(image_file.read())
 

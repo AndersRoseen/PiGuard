@@ -1,5 +1,6 @@
 from sense_hat import SenseHat
 from sensors import ISensor
+from piguardtyping import Status
 
 
 sense_hat = SenseHat()
@@ -7,10 +8,10 @@ sense_hat = SenseHat()
 
 class SenseHatSensor(ISensor):
 
-    def __init__(self, active_sensors: list):
+    def __init__(self, active_sensors: [str]):
         self.sensors = active_sensors
 
-    def update_status(self, status: dict):
+    def update_status(self, status: Status):
         global sense_hat
 
         if "temperature" in self.sensors:

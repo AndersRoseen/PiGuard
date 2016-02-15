@@ -1,4 +1,6 @@
 from abc import ABCMeta, abstractmethod
+from typing import Callable
+from piguardtyping import Status
 import configmanager
 
 
@@ -6,7 +8,7 @@ class ISensor(object):
     __metaclass__ = ABCMeta
     
     @abstractmethod
-    def update_status(self, status: dict):
+    def update_status(self, status: Status):
         pass
 
 
@@ -27,7 +29,7 @@ def _get_pir_sensor() -> ISensor:
     return PIRSensor(pin)
 
 
-def _get_sensor_generators() -> dict:
+def _get_sensor_generators() -> {str: Callable}:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
@@ -35,7 +37,7 @@ def _get_sensor_generators() -> dict:
     return sensors
 
 
-def get_sensors() -> list:
+def get_sensors() -> [ISensor]:
     sensors_list = list()
 
     sensors_to_use = configmanager.config["sensors"]["sensors_list"].split(",")

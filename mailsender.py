@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from actions import IAction
+from piguardtyping import Status
 
 
 class MailSender(IAction):
@@ -46,7 +47,7 @@ class MailSender(IAction):
     
         self._last_sent_mail_date = now
 
-    def perform_action(self, status: dict):
+    def perform_action(self, status: Status):
         picture = status["picture"]
         self._send_mail(picture)
 

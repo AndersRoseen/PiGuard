@@ -1,5 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from messages import Message
+from typing import Any
 import json
 import queue
 import storagemanager
@@ -90,7 +91,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
 
 class RestServer(HTTPServer):
 
-    def __init__(self, server_address: tuple, RequestHandlerClass, commands_queue: queue.Queue, key_path: str, certificate_path: str):
+    def __init__(self, server_address: (str, int), RequestHandlerClass, commands_queue: queue.Queue, key_path: str, certificate_path: str):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
         self.socket = ssl.wrap_socket(self.socket, keyfile=key_path, certfile=certificate_path, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
@@ -108,7 +109,7 @@ def get_rest_server(commands_queue: queue.Queue) -> RestServer:
     return RestServer((HOST, PORT), RestRequestHandler, commands_queue, key_path, certificate_path)
 
 
-def _generate_response(output: list) -> dict:
+def _generate_response(output: [Message]) -> {str: Any}:
     json_response = dict()
     json_response["response"] = dict()
     json_response["response"]["system_status"] = dict()

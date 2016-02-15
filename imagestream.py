@@ -1,13 +1,13 @@
 from PIL import Image
-import io
+from typing import BinaryIO
 
 
 class ImageStream(object):
     
-    def __init__(self, stream: io.BytesIO):
+    def __init__(self, stream: BinaryIO):
         self._stream = stream
         
-    def get_stream(self) -> io.BytesIO:
+    def get_stream(self) -> BinaryIO:
         self._stream.seek(0)
         return self._stream
     
