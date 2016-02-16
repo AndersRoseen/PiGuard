@@ -3,7 +3,6 @@ from actions import Event
 from piguardtyping import Status
 
 
-
 class IStatusAnalyzer(object):
     __metaclass__ = ABCMeta
 

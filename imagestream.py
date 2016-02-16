@@ -1,6 +1,7 @@
 from PIL import Image
 from piguardtyping import Stream
 
+
 class ImageStream(object):
     
     def __init__(self, stream: Stream):

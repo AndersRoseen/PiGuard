@@ -4,7 +4,6 @@ from systemstatus import Mode
 from piguardtyping import Status
 
 
-
 class Event(Enum):
     empty = "empty"
     motionDetected = "motionDetected"
