@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable
 from piguardtyping import Status
 import configmanager
 
@@ -29,7 +28,7 @@ def _get_pir_sensor() -> ISensor:
     return PIRSensor(pin)
 
 
-def _get_sensor_generators() -> {str: Callable}:
+def _get_sensor_generators() -> dict:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
