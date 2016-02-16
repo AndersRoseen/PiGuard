@@ -38,7 +38,7 @@ class DropboxUploader(IAction):
     def _upload_stream_to_dropbox(self, file_stream: Stream, file_name: str) -> bool:
         dest_path = os.path.join('/', file_name)
         try:
-            self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
+            self._dropbox.files_upload(file_stream, dest_path, mute=True)
             return True
         except dropbox.exceptions.ApiError as err:
             print('Dropbox API error: ', err)
