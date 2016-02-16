@@ -1,6 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from messages import Message
-from typing import Any
+from piguardtyping import JSON
 import json
 import queue
 import storagemanager
@@ -109,7 +109,7 @@ def get_rest_server(commands_queue: queue.Queue) -> RestServer:
     return RestServer((HOST, PORT), RestRequestHandler, commands_queue, key_path, certificate_path)
 
 
-def _generate_response(output: [Message]) -> {str: Any}:
+def _generate_response(output: [Message]) -> JSON:
     json_response = dict()
     json_response["response"] = dict()
     json_response["response"]["system_status"] = dict()

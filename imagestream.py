@@ -1,13 +1,12 @@
 from PIL import Image
-from typing import BinaryIO
-
+from piguardtyping import Stream
 
 class ImageStream(object):
     
-    def __init__(self, stream: BinaryIO):
+    def __init__(self, stream: Stream):
         self._stream = stream
         
-    def get_stream(self) -> BinaryIO:
+    def get_stream(self) -> Stream:
         self._stream.seek(0)
         return self._stream
     

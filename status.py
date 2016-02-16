@@ -1,7 +1,7 @@
 from queue import Empty
 from systemstatus import Mode
 from sensors import ISensor
-from typing import Any
+from piguardtyping import Status
 import actions
 import analyzers
 import datetime
@@ -13,12 +13,12 @@ class StatusGenerator(object):
     def __init__(self, sensors_list: [ISensor]):
         self._sensors = sensors_list
 
-    def _new_status(self) -> {str: Any}:
+    def _new_status(self) -> Status:
         status = dict()
         status["timestamp"] = datetime.datetime.now()
         return status
     
-    def get_current_status(self) -> {str: Any}:
+    def get_current_status(self) -> Status:
         status = self._new_status()
         for sensor in self._sensors:
             sensor.update_status(status)
@@ -34,12 +34,12 @@ class StatusHandler(object):
         self._actions_per_event = actions_per_event
         self._on_demand_actions_queue = action_queue
         
-    def manage_status(self, status: {str: Any}, mode: Mode):
+    def manage_status(self, status: Status, mode: Mode):
         events = self._analyze(status)
         actions_list = self._prepare_actions(events, mode)
         self._process_actions(actions_list, status)
     
-    def _analyze(self, status: {str: Any}) -> [actions.Event]:
+    def _analyze(self, status: Status) -> [actions.Event]:
         events = list()
         for analyzer in self._analyzers:
             curr_events = analyzer.analyze_status(status)
@@ -63,7 +63,7 @@ class StatusHandler(object):
         
         return action_types
     
-    def _process_actions(self, actions_list: [actions.ActionType], status: {str: Any}):
+    def _process_actions(self, actions_list: [actions.ActionType], status: Status):
         for action_type in actions_list:
             action = self._actions[action_type]
             try:

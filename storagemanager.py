@@ -1,6 +1,5 @@
 from imagestream import ImageStream
-from typing import BinaryIO
-from piguardtyping import JSON
+from piguardtyping import JSON, Stream
 import threading
 import json
 import os
@@ -45,7 +44,7 @@ class StorageManager(object):
         statuses_file.close()
         return statuses_list
 
-    def write_statuses_on_stream(self, stream: BinaryIO):
+    def write_statuses_on_stream(self, stream: Stream):
         with self._semaphore:
             with open(self.file_path, "rb") as statuses_file:
                 stream.write(statuses_file.read())
@@ -93,7 +92,7 @@ class StorageManager(object):
     def save_image(self, image_stream: ImageStream, image_name: str):
         image_stream.get_image().save(self.pictures_dir + image_name)
 
-    def write_image_on_stream(self, image_name: str, stream: BinaryIO):
+    def write_image_on_stream(self, image_name: str, stream: Stream):
         with open(self.pictures_dir + image_name, 'rb') as image_file:
             stream.write(image_file.read())
 

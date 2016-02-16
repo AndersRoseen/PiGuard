@@ -3,8 +3,7 @@ import datetime
 import os
 import json
 import storagemanager
-from typing import BinaryIO
-from piguardtyping import JSON, Status
+from piguardtyping import JSON, Status, Stream
 from actions import IAction
 
 
@@ -56,7 +55,7 @@ class DropboxUploader(IAction):
         self._last_upload = datetime.datetime.now()
         self._upload_interval = upload_interval * 60
     
-    def _upload_stream_to_dropbox(self, file_stream: BinaryIO, file_name: str) -> bool:
+    def _upload_stream_to_dropbox(self, file_stream: Stream, file_name: str) -> bool:
         dest_path = os.path.join('/', file_name)
         try:
             self._dropbox.files_upload(file_stream.get_stream(), dest_path, mute=True)
@@ -65,7 +64,7 @@ class DropboxUploader(IAction):
             print('Dropbox API error: ', err)
             return False
             
-    def upload_file_stream(self, file_stream: BinaryIO, file_name: str) -> bool:
+    def upload_file_stream(self, file_stream: Stream, file_name: str) -> bool:
         result = self._upload_stream_to_dropbox(file_stream, file_name)
         print("Picture uploaded on Dropbox!")
         return result

@@ -1,6 +1,5 @@
 import configmanager
 import base64
-from typing import Set
 
 
 def encode_credentials(credentials: str) -> str:
@@ -22,7 +21,7 @@ class AuthManager(object):
         return self.authenticate(encode_credentials(credentials))
 
 
-def _get_credentials() -> Set[str]:
+def _get_credentials() -> set:
     credentials = set()
     list_cred = configmanager.config["auth"]["credentials"].split(",")
     for cred in list_cred:
