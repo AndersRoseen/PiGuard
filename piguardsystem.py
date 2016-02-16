@@ -101,7 +101,8 @@ class SystemActionsGenerator(threading.Thread):
 
     def run(self):
         while True:
-            self._actions_queue.put(ActionType.uploadStatus)
+            self._actions_queue.put(ActionType.saveStatus)
+            self._actions_queue.put(ActionType.performBackup)
             sleep(self._data_update_interval)
 
 
@@ -161,7 +162,7 @@ class System(object):
                 self._handler_thread.mode = self.mode
                 self.send_message(Message.mode_surveillance_activated)
         elif command == "snapshot":
-            self._on_demand_actions_queue.put(ActionType.uploadStatus)
+            self._on_demand_actions_queue.put(ActionType.saveStatus)
             self.send_message(Message.snapshot_requested)
         elif command == "help":
             self.send_message(Message.help_command_list)
