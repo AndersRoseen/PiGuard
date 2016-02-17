@@ -61,8 +61,12 @@ class DropboxUploader(IAction):
     def perform_backup(self):
         statuses = storagemanager.manager.get_statuses()
         self.upload_statuses_list(statuses)
-        for status in statuses["statuses"]:
-            picture_name = status["picture"]
+
+        dbx_pictures = set(map(lambda x: x.name, self._dropbox.files_list_folder('').entries))
+        local_pictures = set(map(lambda x: x["picture"], statuses["statuses"]))
+        local_pictures.difference_update(dbx_pictures)
+
+        for picture_name in local_pictures:
             picture_stream = io.BytesIO()
             storagemanager.manager.write_image_on_stream(picture_name, picture_stream)
             picture_stream.seek(0)
