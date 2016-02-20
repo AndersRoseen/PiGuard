@@ -82,10 +82,10 @@ class DropboxUploader(IAction):
             dbx_statuses["statuses"].insert(curr_pos, status)
             curr_pos += 1
 
-        self.clean_old_data(dbx_statuses)
+        self.clean_old_data(dbx_statuses, dbx_pictures)
         self.upload_statuses_list(dbx_statuses)
 
-    def clean_old_data(self, statuses: JSON):
+    def clean_old_data(self, statuses: JSON, pictures: set):
         now = datetime.datetime.now()
         index = 0
         for status in statuses["statuses"]:
@@ -95,8 +95,8 @@ class DropboxUploader(IAction):
                 break
             index += 1
 
-        pictures = list(map(lambda x: x["pictures"], statuses["statuses"][index:]))
-        for picture_name in pictures:
+        pictures_to_delete = pictures.difference(set(lambda x: x["picture"], statuses["statuses"]))
+        for picture_name in pictures_to_delete:
             self._dropbox.files_delete('/' + picture_name)
 
     def get_statuses_list(self) -> JSON:
