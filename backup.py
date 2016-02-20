@@ -60,7 +60,6 @@ class DropboxUploader(IAction):
 
     def perform_backup(self):
         statuses = storagemanager.manager.get_statuses()
-        self.upload_statuses_list(statuses)
 
         dbx_pictures = set(map(lambda x: x.name, self._dropbox.files_list_folder('').entries))
         local_pictures = set(map(lambda x: x["picture"], statuses["statuses"]))
@@ -71,6 +70,29 @@ class DropboxUploader(IAction):
             storagemanager.manager.write_image_on_stream(picture_name, picture_stream)
             picture_stream.seek(0)
             self.upload_file_stream(picture_stream, picture_name)
+
+        dbx_statuses = self.get_statuses_list()
+        ref_timestamp = dbx_statuses["statuses"][0]["timestamp"]
+        curr_pos = 0
+        for status in statuses["statuses"]:
+            if status["timestamp"] == ref_timestamp:
+                break
+            dbx_statuses["statuses"].insert(curr_pos, status)
+            curr_pos += 1
+
+        self.upload_statuses_list(dbx_statuses)
+
+
+    def get_statuses_list(self) -> JSON:
+        try:
+            _, res = self._dropbox.files_download('/statuses.json')
+            data = str(res.content, "utf-8")
+            return json.loads(data)
+        except dropbox.exceptions.ApiError as err:
+            print('Dropbox API error: ', err)
+            print('Status list file not found or impossible to download... creating a new one!')
+            return {"statuses": list()}
+
 
     def perform_action(self, status: Status):
         backup_thread = threading.Thread(target=self.perform_backup)
