@@ -64,6 +64,8 @@ class DropboxUploader(IAction):
         statuses = storagemanager.manager.get_statuses()
 
         dbx_pictures = set(map(lambda x: x.name, self._dropbox.files_list_folder('').entries))
+        dbx_pictures.discard('statuses.json')
+
         local_pictures = set(map(lambda x: x["picture"], statuses["statuses"]))
         local_pictures.difference_update(dbx_pictures)
 
