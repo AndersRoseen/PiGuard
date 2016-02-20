@@ -7,6 +7,7 @@ import storagemanager
 import io
 import json
 import threading
+import datetime
 
 
 class DropboxUploader(IAction):
@@ -30,10 +31,11 @@ class DropboxUploader(IAction):
             print('Error: %s' % (e, ))
             return
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, time_window: int):
         dbx = dropbox.Dropbox(token)
         dbx.users_get_current_account()
         self._dropbox = dbx
+        self._time_window = time_window
 
     def _upload_stream_to_dropbox(self, file_stream: Stream, file_name: str) -> bool:
         dest_path = os.path.join('/', file_name)
@@ -80,8 +82,22 @@ class DropboxUploader(IAction):
             dbx_statuses["statuses"].insert(curr_pos, status)
             curr_pos += 1
 
+        self.clean_old_data(dbx_statuses)
         self.upload_statuses_list(dbx_statuses)
 
+    def clean_old_data(self, statuses: JSON):
+        now = datetime.datetime.now()
+        index = 0
+        for status in statuses["statuses"]:
+            status_ts = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            if (now - status_ts).days > self._time_window:
+                statuses["statuses"] = statuses["statuses"][:index]
+                break
+            index += 1
+
+        pictures = list(map(lambda x: x["pictures"], statuses["statuses"][index:]))
+        for picture_name in pictures:
+            self._dropbox.files_delete('/' + picture_name)
 
     def get_statuses_list(self) -> JSON:
         try:
@@ -93,7 +109,6 @@ class DropboxUploader(IAction):
             print('Status list file not found or impossible to download... creating a new one!')
             return {"statuses": list()}
 
-
     def perform_action(self, status: Status):
         backup_thread = threading.Thread(target=self.perform_backup)
         backup_thread.setDaemon(True)
@@ -102,9 +117,10 @@ class DropboxUploader(IAction):
 
 def get_backup_manager():
     token = configmanager.config['dropbox']['login_token']
+    time_window = configmanager.config.getint('backup', 'time_window')
     if len(token) == 0:
         token = DropboxUploader.generate_auth_token(configmanager.config['dropbox']['app_key'], configmanager.config['dropbox']['app_secret'])
         configmanager.config['dropbox']['login_token'] = token
         with open('piguard.ini', 'w') as configfile:
             configmanager.config.write(configfile)
-    return DropboxUploader(token)
+    return DropboxUploader(token, time_window)
