@@ -95,7 +95,7 @@ class DropboxUploader(IAction):
                 break
             index += 1
 
-        pictures_to_delete = pictures.difference(set(lambda x: x["picture"], statuses["statuses"]))
+        pictures_to_delete = pictures.difference(set(map(lambda x: x["picture"], statuses["statuses"])))
         for picture_name in pictures_to_delete:
             self._dropbox.files_delete('/' + picture_name)
 
