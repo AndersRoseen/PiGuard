@@ -92,7 +92,7 @@ class DropboxUploader(IAction):
         index = 0
         for status in statuses["statuses"]:
             status_ts = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
-            if (now - status_ts).days > self._time_window:
+            if (now - status_ts).days >= self._time_window:
                 statuses["statuses"] = statuses["statuses"][:index]
                 break
             index += 1
