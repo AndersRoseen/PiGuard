@@ -10,7 +10,7 @@ import configmanager
 
 class StorageManager(object):
 
-    def __init__(self, statuses_path: str, images_path: str):
+    def __init__(self, statuses_path: str, images_path: str, time_window: int):
         file_name = "statuses.json"
         full_path = statuses_path + file_name
         if not os.path.exists(statuses_path):
@@ -27,6 +27,7 @@ class StorageManager(object):
         self.pictures_dir = images_path
         self._semaphore = threading.BoundedSemaphore()
         self._last_update = datetime.datetime.now()
+        self._time_window = time_window
 
     def add_status(self, status: JSON):
         with self._semaphore:
@@ -66,7 +67,7 @@ class StorageManager(object):
         delete_index = len(statuses["statuses"])
         for i, status in enumerate(statuses["statuses"]):
             status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
-            if (current_date - status_timestamp).days > 2:
+            if (current_date - status_timestamp).days >= self._time_window:
                 delete_index = i
                 break
 
@@ -98,7 +99,8 @@ class StorageManager(object):
 
 
 manager = StorageManager(configmanager.config["storage"]["statuses_location"],
-                         configmanager.config["storage"]["images_location"])
+                         configmanager.config["storage"]["images_location"],
+                         configmanager.config.getint('storage', 'time_window'))
 
 
 def _clean_up_operation():
