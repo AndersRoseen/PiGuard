@@ -45,10 +45,24 @@ class StorageManager(object):
         statuses_file.close()
         return statuses_list
 
-    def write_statuses_on_stream(self, stream: Stream):
-        with self._semaphore:
-            with open(self.file_path, "rb") as statuses_file:
-                stream.write(statuses_file.read())
+    def write_statuses_on_stream(self, stream: Stream, time_frame: int = 0):
+        if time_frame != 0:
+            ref_date = datetime.datetime.now() - datetime.timedelta(hours=time_frame)
+            statuses = self.get_statuses_till_date(ref_date)
+            json.dump(statuses, stream)
+        else:
+            with self._semaphore:
+                with open(self.file_path, "rb") as statuses_file:
+                    stream.write(statuses_file.read())
+
+    def _get_statuses_till_date(self, date: datetime.datetime):
+        statuses = self.get_statuses()
+        for index, status in enumerate(statuses["statuses"]):
+            status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            if status_timestamp <= date:
+                statuses["statuses"] = statuses["statuses"][:index]
+                break
+        return statuses
 
     def save_statuses(self, statuses: JSON):
         with self._semaphore:

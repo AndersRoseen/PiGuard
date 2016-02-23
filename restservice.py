@@ -21,7 +21,10 @@ class RestRequestHandler(BaseHTTPRequestHandler):
             elif api_type == "image" and parameter is not None:
                 self.retrieve_image(parameter)
             elif api_type == "statuses":
-                self.retrieve_statuses()
+                hours = 0
+                if parameter is not None:
+                    hours = int(parameter)
+                self.retrieve_statuses(parameter, hours)
             else:
                 self.send_error(400, "Method \"" + api_type + "\" not found!")
 
@@ -81,10 +84,10 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         except:
             self.send_error(404, "File Not Found: %s" % image_name)
 
-    def retrieve_statuses(self):
+    def retrieve_statuses(self, hours: int):
         try:
             self.do_OK_HEAD("application/json")
-            storagemanager.manager.write_statuses_on_stream(self.wfile)
+            storagemanager.manager.write_statuses_on_stream(self.wfile, hours)
         except:
             self.send_error(404, "File Not Found: statuses.json")
 
