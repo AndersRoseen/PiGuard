@@ -48,8 +48,8 @@ class StorageManager(object):
     def write_statuses_on_stream(self, stream: Stream, time_frame: int = 0):
         if time_frame != 0:
             ref_date = datetime.datetime.now() - datetime.timedelta(hours=time_frame)
-            statuses = self.get_statuses_till_date(ref_date)
-            json.dump(statuses, stream)
+            statuses = self._get_statuses_till_date(ref_date)
+            stream.write(bytes(json.dumps(statuses), "utf-8"))
         else:
             with self._semaphore:
                 with open(self.file_path, "rb") as statuses_file:
