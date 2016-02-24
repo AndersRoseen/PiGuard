@@ -24,7 +24,7 @@ class RestRequestHandler(BaseHTTPRequestHandler):
                 hours = 0
                 if parameter is not None:
                     hours = int(parameter)
-                self.retrieve_statuses(parameter, hours)
+                self.retrieve_statuses(hours)
             else:
                 self.send_error(400, "Method \"" + api_type + "\" not found!")
 
