@@ -97,13 +97,47 @@ class SystemActionsGenerator(threading.Thread):
         super().__init__()
         self.daemon = True
         self._actions_queue = actions_queue
-        self._data_update_interval = configmanager.config.getint('general', 'data_update_interval') * 60
+        configuration_string = configmanager.config["actions"]["on_demand_actions"]
+        # if there is a valid configuration proceed with the init process
+        if len(configuration_string) > 0 and ":" in configuration_string:
+            actions_and_intervals = configuration_string.split(",")
+            self._on_demand_actions = dict()
+            for action_interval in actions_and_intervals:
+                elements = action_interval.split(":")
+                self._on_demand_actions[ActionType(elements[0])] = int(elements[1]) * 60
+
+            # I'm creating a list of tuples where the first element is the ActionType and the second is the interval
+            self._exec_list = list(self._on_demand_actions.items())
+            self._exec_list.sort(key=lambda x: x[1])
+        else:
+            self._exec_list = list()
 
     def run(self):
+        # if there are no actions in the execution list there is no point in running the thread
+        if len(self._exec_list) == 0:
+            return
+
         while True:
-            self._actions_queue.put(ActionType.saveStatus)
-            self._actions_queue.put(ActionType.performBackup)
-            sleep(self._data_update_interval)
+            # comparing all the intervals and picking the smallest as sleep_time
+            # I know that since sleep_time starts with the value of the first element of the list checking it again is
+            # redundant but given the simplicity of the loop extracting a slice would probably more expensive from
+            # a computational point of view
+            sleep_time = self._exec_list[0][1]
+            for action in self._exec_list:
+                if action[1] < sleep_time:
+                    sleep_time = action[1]
+
+            # sleep for the chosen amount of time
+            sleep(sleep_time)
+
+            # iterate over the execution list, subtract the slept time to the interval and if the result is zero or less
+            # it is time to execute the action. If the action is executed (added to the execution queue) then its
+            # interval value is restored to the original one
+            for action in self._exec_list:
+                action[1] -= sleep_time
+                if action[1] <= 0:
+                    self._actions_queue.put(action[0])
+                    action[1] = self._on_demand_actions[action[0]]
 
 
 class System(object):
