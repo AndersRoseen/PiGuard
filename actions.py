@@ -12,7 +12,7 @@ class Event(Enum):
 
 class ActionType(Enum):
     sendMail = "sendMail"
-    saveStatus = "uploadStatus"
+    saveStatus = "saveStatus"
     performBackup = "performBackup"
 
 
