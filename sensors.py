@@ -28,11 +28,20 @@ def _get_pir_sensor() -> ISensor:
     return PIRSensor(pin)
 
 
+def _get_dht_sensor() -> ISensor:
+    from dhtsensor import DHTSensor
+    pin = configmanager.config.getint("dht", "gpio_pin")
+    active_sensors = configmanager.config["dht"]["active_sensors"].split(",")
+    model = configmanager.config["dht"]["model"]
+    return DHTSensor(active_sensors, model, pin)
+
+
 def _get_sensor_generators() -> dict:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
     sensors["pir"] = _get_pir_sensor
+    sensors["dht"] = _get_dht_sensor
     return sensors
 
 
