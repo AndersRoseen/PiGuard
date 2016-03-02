@@ -1,12 +1,14 @@
-from camerasensor import CameraSensor
-from PIL import ImageChops
+from PIL import ImageChops, Image
 from functools import reduce
 import math 
 import operator
-from status import IStatusAnalyzer, Event
+from analyzers import IStatusAnalyzer
+from actions import Event
+from imagestream import ImageStream
+from piguardtyping import Status
 
 
-def img_diff(im1, im2):
+def img_diff(im1: Image, im2: Image):
     histogram = ImageChops.difference(im1, im2).histogram()
     rms = reduce(operator.add, map(lambda h, i: h*(i**2), histogram, range(256)))/(float(im1.size[0])*im1.size[1])
     return math.sqrt(rms)
@@ -17,7 +19,7 @@ class MotionDetector(IStatusAnalyzer):
     def __init__(self):
         self._last_picture_stream = None
 
-    def _detect_motion(self, new_picture_stream):
+    def _detect_motion(self, new_picture_stream: ImageStream):
         
         if self._last_picture_stream is None:
             self._last_picture_stream = new_picture_stream
@@ -38,7 +40,19 @@ class MotionDetector(IStatusAnalyzer):
         
         return motion_occurred
 
-    def analyze_status(self, status):
-        if self._detect_motion(status.picture):
+    def analyze_status(self, status: Status) -> [Event]:
+
+        if "motion" not in status.keys():
+            if "picture" in status.keys():
+                picture = status["picture"]
+                if self._detect_motion(picture):
+                    status["motion"] = True
+                else:
+                    status["motion"] = False
+            else:
+                return []
+
+        if status["motion"]:
             return [Event.motionDetected]
-        return []
+        else:
+            return []

@@ -1,6 +1,7 @@
 import socketserver
 import queue
 import authmanager
+import os
 
 
 class CommandHandler(socketserver.StreamRequestHandler):
@@ -34,9 +35,9 @@ class CommandHandler(socketserver.StreamRequestHandler):
             
             while True:
                 message = messages_queue.get()
-                if message == "END":
+                if message.value == "END":
                     break
-                self.wfile.write(bytes(message + "\n", "utf-8"))
+                self.wfile.write(bytes(message.value + "\n", "utf-8"))
             
             if "shutdown" == command:
                 break
@@ -44,10 +45,18 @@ class CommandHandler(socketserver.StreamRequestHandler):
 
 class ConsoleServer(socketserver.TCPServer):
 
-    def __init__(self, server_address, RequestHandlerClass, commands_queue):
+    def __init__(self, server_address: (str, int), RequestHandlerClass, commands_queue: queue.Queue):
         socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
         self.commands = commands_queue
 
 
+def get_ip_address() -> str:
+    with os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d " " -f1') as f:
+        return f.read()
+
+
+def get_console_server(commands_queue: queue.Queue) -> ConsoleServer:
+    HOST, PORT = get_ip_address(), 2727
+    return ConsoleServer((HOST, PORT), CommandHandler, commands_queue)
 
 

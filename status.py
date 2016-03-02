@@ -1,27 +1,25 @@
-from abc import ABCMeta, abstractmethod
-from enum import Enum
+from queue import Empty
+from systemstatus import Mode
+from sensors import ISensor
+from piguardtyping import Status
+import actions
+import analyzers
 import datetime
-
-
-class Status(object):
-    
-    def __init__(self):
-        self.timestamp = datetime.datetime.now()
-        self.picture = None
-
-
-class Event(Enum):
-    empty = "empty"
-    motionDetected = "motionDetected"
+import queue
 
 
 class StatusGenerator(object):
     
-    def __init__(self, sensors):
-        self._sensors = sensors
+    def __init__(self, sensors_list: [ISensor]):
+        self._sensors = sensors_list
+
+    def _new_status(self) -> Status:
+        status = dict()
+        status["timestamp"] = datetime.datetime.now()
+        return status
     
-    def get_current_status(self):
-        status = Status()
+    def get_current_status(self) -> Status:
+        status = self._new_status()
         for sensor in self._sensors:
             sensor.update_status(status)
         
@@ -30,62 +28,55 @@ class StatusGenerator(object):
 
 class StatusHandler(object):
     
-    def __init__(self, analyzers, actions, actions_per_event):
-        self._analyzers = analyzers
-        self._actions = actions
+    def __init__(self, analyzers_list: [analyzers.IStatusAnalyzer], actions_list: {actions.ActionType: actions.IAction}, actions_per_event: {Mode: {actions.Event: actions.ActionType}}, action_queue: queue.Queue):
+        self._analyzers = analyzers_list
+        self._actions = actions_list
         self._actions_per_event = actions_per_event
+        self._on_demand_actions_queue = action_queue
         
-    def manage_status(self, status):
+    def manage_status(self, status: Status, mode: Mode):
         events = self._analyze(status)
-        actions = self._prepare_actions(events)
-        self._process_actions(actions, status)
+        actions_list = self._prepare_actions(events, mode)
+        self._process_actions(actions_list, status)
     
-    def _analyze(self, status):
-        events = []
+    def _analyze(self, status: Status) -> [actions.Event]:
+        events = list()
         for analyzer in self._analyzers:
             curr_events = analyzer.analyze_status(status)
             events.extend(curr_events)
         
-        events.append(Event.empty)
         return events
     
-    def _prepare_actions(self, events):
-        action_types = {}
+    def _prepare_actions(self, events: [actions.Event], mode: Mode):
+        action_types = set()
         for event in events:
-            actions_per_event = self._actions_per_event[event]
+            actions_per_event = self._actions_per_event[mode][event]
             for action_type in actions_per_event:
-                if action_type in action_types:
-                    action_types[action_type].append(event)
-                else:
-                    action_types[action_type] = [event]
+                action_types.add(action_type)
+
+        while True:
+            try:
+                action_type = self._on_demand_actions_queue.get_nowait()
+                action_types.add(action_type)
+            except Empty:
+                break
         
         return action_types
     
-    def _process_actions(self, actions, status):
-        for action_type, events in actions.items():
+    def _process_actions(self, actions_list: [actions.ActionType], status: Status):
+        for action_type in actions_list:
             action = self._actions[action_type]
             try:
-                action.perform_action(status, events)
+                action.perform_action(status)
             except:
                 print("Issue while performing ", action_type)
-            
 
-class IStatusAnalyzer(object):
-    __metaclass__ = ABCMeta
-    
-    @abstractmethod
-    def analyze_status(self, status):
-        pass
-        
 
-class ActionType(Enum):
-    sendMail = "sendMail"
-    uploadStatus = "uploadStatus"
-    
+def get_status_handler(action_queue: queue.Queue) -> StatusHandler:
+    analyzers_list = analyzers.get_status_analyzers()
+    actions_list = actions.get_actions()
+    actions_per_event = actions.get_actions_per_event()
 
-class IAction(object):
-    __metaclass__ = ABCMeta
-        
-    @abstractmethod
-    def perform_action(self, status, events):
-        pass
+    return StatusHandler(analyzers_list, actions_list, actions_per_event, action_queue)
+
+

@@ -1,3 +1,5 @@
+from imagestream import ImageStream
+from piguardtyping import JSON, Stream
 import threading
 import json
 import os
@@ -8,7 +10,7 @@ import configmanager
 
 class StorageManager(object):
 
-    def __init__(self, statuses_path, images_path):
+    def __init__(self, statuses_path: str, images_path: str, time_window: int):
         file_name = "statuses.json"
         full_path = statuses_path + file_name
         if not os.path.exists(statuses_path):
@@ -25,33 +27,48 @@ class StorageManager(object):
         self.pictures_dir = images_path
         self._semaphore = threading.BoundedSemaphore()
         self._last_update = datetime.datetime.now()
+        self._time_window = time_window
 
-    def add_status(self, status):
+    def add_status(self, status: JSON):
         with self._semaphore:
             statuses = self._unsafe_get_statuses()
             statuses["statuses"].insert(0, status)
             self._unsafe_save_statuses(statuses)
 
-    def get_statuses(self):
+    def get_statuses(self) -> JSON:
         with self._semaphore:
             return self._unsafe_get_statuses()
 
-    def _unsafe_get_statuses(self):
+    def _unsafe_get_statuses(self) -> JSON:
         statuses_file = open(self.file_path, "r")
         statuses_list = json.load(statuses_file)
         statuses_file.close()
         return statuses_list
 
-    def write_statuses_on_stream(self, stream):
-        with self._semaphore:
-            with open(self.file_path, "rb") as statuses_file:
-                stream.write(statuses_file.read())
+    def write_statuses_on_stream(self, stream: Stream, time_frame: int = 0):
+        if time_frame != 0:
+            ref_date = datetime.datetime.now() - datetime.timedelta(hours=time_frame)
+            statuses = self._get_statuses_till_date(ref_date)
+            stream.write(bytes(json.dumps(statuses), "utf-8"))
+        else:
+            with self._semaphore:
+                with open(self.file_path, "rb") as statuses_file:
+                    stream.write(statuses_file.read())
 
-    def save_statuses(self, statuses):
+    def _get_statuses_till_date(self, date: datetime.datetime):
+        statuses = self.get_statuses()
+        for index, status in enumerate(statuses["statuses"]):
+            status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            if status_timestamp <= date:
+                statuses["statuses"] = statuses["statuses"][:index]
+                break
+        return statuses
+
+    def save_statuses(self, statuses: JSON):
         with self._semaphore:
             self._unsafe_save_statuses(statuses)
 
-    def _unsafe_save_statuses(self, statuses):
+    def _unsafe_save_statuses(self, statuses: JSON):
         with open(self.file_path, "w") as statuses_file:
             json.dump(statuses, statuses_file)
             self._last_update = datetime.datetime.now()
@@ -64,7 +81,7 @@ class StorageManager(object):
         delete_index = len(statuses["statuses"])
         for i, status in enumerate(statuses["statuses"]):
             status_timestamp = datetime.datetime.strptime(status["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
-            if (current_date - status_timestamp).days > 2:
+            if (current_date - status_timestamp).days >= self._time_window:
                 delete_index = i
                 break
 
@@ -87,16 +104,17 @@ class StorageManager(object):
         else:
             self.save_statuses(statuses)
 
-    def save_image(self, image_stream, image_name):
+    def save_image(self, image_stream: ImageStream, image_name: str):
         image_stream.get_image().save(self.pictures_dir + image_name)
 
-    def write_image_on_stream(self, image_name, stream):
+    def write_image_on_stream(self, image_name: str, stream: Stream):
         with open(self.pictures_dir + image_name, 'rb') as image_file:
             stream.write(image_file.read())
 
 
 manager = StorageManager(configmanager.config["storage"]["statuses_location"],
-                         configmanager.config["storage"]["images_location"])
+                         configmanager.config["storage"]["images_location"],
+                         configmanager.config.getint('storage', 'time_window'))
 
 
 def _clean_up_operation():
