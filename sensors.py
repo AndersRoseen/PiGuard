@@ -36,12 +36,19 @@ def _get_dht_sensor() -> ISensor:
     return DHTSensor(active_sensors, model, pin)
 
 
+def _get_bmp_sensor() -> ISensor:
+    from bmpsensor import BMPSensor
+    active_sensors = configmanager.config["bmp"]["active_sensors"].split(",")
+    return BMPSensor(active_sensors)
+
+
 def _get_sensor_generators() -> dict:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
     sensors["sensehat"] = _get_sense_hat_sensor
     sensors["pir"] = _get_pir_sensor
     sensors["dht"] = _get_dht_sensor
+    sensors["bmp"] = _get_bmp_sensor
     return sensors
 
 
