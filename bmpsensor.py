@@ -1,8 +1,6 @@
 from sensors import ISensor
 from piguardtyping import Status
-import Adafruit_BMP.BMP085 as BMP085
-
-_bmp_sensor = BMP085.BMP085()
+import MyPyBMP180
 
 
 class BMPSensor(ISensor):
@@ -11,9 +9,13 @@ class BMPSensor(ISensor):
         self.sensors = active_sensors
 
     def update_status(self, status: Status):
-        if "pressure" in self.sensors:
-            pressure = _bmp_sensor.read_pressure() / 10e1
-            status["pressure"] = round(pressure, 2)
-        if "altitude" in self.sensors:
-            altitude = _bmp_sensor.read_altitude()
-            status["altitude"] = round(altitude, 2)
+        try:
+            pressure, temperature = MyPyBMP180.sensor_read()
+            if "pressure" in self.sensors:
+                status["pressure"] = pressure
+            if "temperature" in self.sensors:
+                status["temperature"] = temperature
+        except MyPyBMP180.BMP180Exception as error:
+            print(error.message)
+
+
