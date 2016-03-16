@@ -37,3 +37,4 @@ class Message(Enum):
     help_help = "\thelp: display this command"
 
     END = "END"
+    NEXT = "NEXT"

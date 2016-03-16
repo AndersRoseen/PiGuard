@@ -1,5 +1,6 @@
 from PIL import Image
 from piguardtyping import Stream
+import os
 
 
 class ImageStream(object):
@@ -13,6 +14,10 @@ class ImageStream(object):
     
     def get_image(self) -> Image:
         return Image.open(self.get_stream())
+
+    def len(self):
+        self._stream.seek(0, os.SEEK_END)
+        return self._stream.tell()
         
     def __del__(self):
         self._stream.close()

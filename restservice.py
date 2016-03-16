@@ -1,4 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from messages import Message
 from piguardtyping import JSON
 import json
@@ -11,6 +12,8 @@ import os
 
 
 class RestRequestHandler(BaseHTTPRequestHandler):
+    # Timeout to avoid the server getting stuck if connection is dropped
+    timeout = 5
 
     def do_GET(self):
         if self.verify_authentication():
@@ -25,6 +28,8 @@ class RestRequestHandler(BaseHTTPRequestHandler):
                 if parameter is not None:
                     hours = int(parameter)
                 self.retrieve_statuses(hours)
+            elif api_type == "live_video":
+                self.stream_camera()
             else:
                 self.send_error(400, "Method \"" + api_type + "\" not found!")
 
@@ -91,8 +96,28 @@ class RestRequestHandler(BaseHTTPRequestHandler):
         except:
             self.send_error(404, "File Not Found: statuses.json")
 
+    def stream_camera(self):
+        try:
+            self.do_OK_HEAD("multipart/x-mixed-replace; boundary=--frame")
+            frame_queue = queue.Queue()
+            messages_queue = queue.Queue()
+            messages_queue.put(frame_queue)
+            self.server.commands.put(("stream_camera", messages_queue))
+            while True:
+                frame = frame_queue.get(timeout=10)
+                messages_queue.put(Message.NEXT)
+                self.wfile.write(b"--frame\r\n")
+                self.send_header("Content-type", "image/jpeg")
+                self.end_headers()
+                self.wfile.write(frame.get_stream().read())
+                self.wfile.write(b"\r\n")
+        except:
+            print("Streaming ended!")
 
-class RestServer(HTTPServer):
+        messages_queue.put(Message.END)
+
+
+class RestServer(ThreadingMixIn, HTTPServer):
 
     def __init__(self, server_address: (str, int), RequestHandlerClass, commands_queue: queue.Queue, key_path: str, certificate_path: str):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
