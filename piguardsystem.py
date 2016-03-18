@@ -10,6 +10,7 @@ import console
 import restservice
 import threading
 import queue
+import traceback
 
 
 class BaseThread(threading.Thread):
@@ -41,6 +42,8 @@ class StatusGeneratorThread(BaseThread):
                 sleep(self._sampling_frequence)
             except:
                 print("Unexpected error - Main")
+                print(traceback.format_exc())
+                break
 
         print("Status generator thread stopped!")
 
@@ -65,6 +68,7 @@ class StatusHandlerThread(BaseThread):
                 print("Status handler timeout!")
             except:
                 print("Unexpected error - Worker")
+                print(traceback.format_exc())
 
         print("Status handler thread stopped!")
 
@@ -207,6 +211,25 @@ class System(object):
             self.send_message(Message.help_shutdown)
             self.send_message(Message.help_exit)
             self.send_message(Message.help_help)
+        elif command == "stream_camera":
+            self._messages_queue = queue.Queue()
+            # stop the system if it is sampling
+            if self.system_status == SystemStatus.started:
+                self.stop()
+            frame_queue = messages_queue.get()
+            import camerasensor
+            while True:
+                try:
+                    frame = camerasensor.capture_picture()
+                    frame_queue.put(frame)
+                    response = messages_queue.get(timeout=10)
+                    if response == Message.END:
+                        break
+                except:
+                    break
+            # restart the system if it was started before
+            if self.system_status == SystemStatus.started:
+                self.start()
         else:
             self.send_message(Message.command_not_found)
 
