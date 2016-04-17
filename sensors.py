@@ -42,6 +42,14 @@ def _get_bmp_sensor() -> ISensor:
     return BMPSensor(active_sensors)
 
 
+def _get_mqair_sensor() -> ISensor:
+    from mqairsensor import MQ135Sensor
+    cal_vol = configmanager.config.getfloat("mq135", "calibration_voltage")
+    adc_port = configmanager.config.getint("mq135", "adc_port")
+    rl = configmanager.config.getfloat("mq135", "r_load")
+    return MQ135Sensor(cal_vol, rl, adc_port)
+
+
 def _get_sensor_generators() -> dict:
     sensors = dict()
     sensors["picamera"] = _get_picamera_sensor
@@ -49,6 +57,7 @@ def _get_sensor_generators() -> dict:
     sensors["pir"] = _get_pir_sensor
     sensors["dht"] = _get_dht_sensor
     sensors["bmp"] = _get_bmp_sensor
+    sensors["mqair"] = _get_mqair_sensor
     return sensors
 
 
