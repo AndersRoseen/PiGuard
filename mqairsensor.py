@@ -27,5 +27,5 @@ class MQ135Sensor(ISensor):
     def update_status(self, status: Status):
         adc_val = adc.read_adc(self.port, gain=1)
         vo = (adc_val/self.val_max)*self.vm
-        ppm = int(pow(((r(vo)/self.ro)/self.a), 1/self.b))
+        ppm = int(pow(((r(vo, self.rl)/self.ro)/self.a), 1/self.b))
         status["co2"] = ppm
