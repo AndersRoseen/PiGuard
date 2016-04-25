@@ -14,6 +14,7 @@ class ActionType(Enum):
     sendMail = "sendMail"
     saveStatus = "saveStatus"
     performBackup = "performBackup"
+    removeMotion = "removeMotion"
 
 
 class IAction(object):
@@ -28,11 +29,13 @@ def get_actions() -> {ActionType: IAction}:
     import mailsender
     import datasaver
     import backup
+    import motioncleaner
 
     actions = dict()
     actions[ActionType.sendMail] = mailsender.get_mail_sender()
     actions[ActionType.saveStatus] = datasaver.get_data_saver()
     actions[ActionType.performBackup] = backup.get_backup_manager()
+    actions[ActionType.removeMotion] = motioncleaner.get_motion_cleaner()
     return actions
 
 
@@ -44,7 +47,7 @@ def get_actions_per_event() -> {Mode: {Event: ActionType}}:
 
     ea[Mode.monitoring] = dict()
     ea[Mode.monitoring][Event.empty] = [ActionType.saveStatus]
-    ea[Mode.monitoring][Event.motionDetected] = list()
+    ea[Mode.monitoring][Event.motionDetected] = [ActionType.removeMotion]
 
     return ea
 
