@@ -8,5 +8,5 @@ class MotionCleaner(IAction):
         status["motion"] = False
 
 
-def fet_motion_cleaner():
+def get_motion_cleaner():
     return MotionCleaner()
