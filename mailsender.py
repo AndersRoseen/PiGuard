@@ -59,4 +59,4 @@ def get_mail_sender() -> MailSender:
     port = configmanager.config['mail']['smtp_port']
     mfrom = configmanager.config['mail']['from']
     mto = configmanager.config['mail']['to']
-    return MailSender(user, passw, server, port, mfrom, mto)
+    return MailSender(user, passw, server, port, mto, mfrom)
