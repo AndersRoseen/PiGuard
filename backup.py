@@ -25,8 +25,8 @@ class DropboxUploader(IAction):
         auth_code = input("Enter the authorization code here: ").strip()
 
         try:
-            access_token, _ = auth_flow.finish(auth_code)
-            return access_token
+            result = auth_flow.finish(auth_code)
+            return result.access_token
         except Exception as e:
             print('Error: %s' % (e, ))
             return
@@ -47,14 +47,14 @@ class DropboxUploader(IAction):
             return False
 
     def upload_file_stream(self, file_stream: Stream, file_name: str) -> bool:
-        result = self._upload_stream_to_dropbox(file_stream, file_name)
+        result = self._upload_stream_to_dropbox(file_stream.getvalue(), file_name)
         print("Picture uploaded on Dropbox!")
         return result
 
     def upload_statuses_list(self, statuses: JSON) -> bool:
         mode = dropbox.files.WriteMode('overwrite', None)
         try:
-            self._dropbox.files_upload(json.dumps(statuses), '/statuses.json', mode=mode)
+            self._dropbox.files_upload(str.encode(json.dumps(statuses)), '/statuses.json', mode=mode)
             return True
         except dropbox.exceptions.ApiError as err:
             print('Dropbox API error: ', err)
