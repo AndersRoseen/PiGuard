@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os, inspect
 #Getting the directory where PiGuard is stored
 piguard_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
